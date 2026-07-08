@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06080c" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Iroto Web</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest?v=2.5.0" />
+  <link rel="stylesheet" href="styles.css?v=2.5.0" />
 </head>
 <body>
   <div id="app">
@@ -29,12 +32,12 @@
       <section id="emptyState" class="empty-state">
         <div class="logo-dot">♪</div>
         <h1>Iroto Web</h1>
-        <p>写真を選択または撮影し、スマートフォンを傾けて演奏します。</p>
+        <p id="homeLead">写真を選択または撮影し、<br>傾けて演奏します。</p>
         <div class="empty-actions">
           <button id="choosePhotoBtn" class="primary-btn" type="button">写真を選択</button>
           <button id="cameraBtn" class="secondary-btn" type="button">写真を撮影</button>
         </div>
-        <p class="hint">Android は Chrome、iPhone は Safari を推奨します。モーションセンサーの使用を許可してください。</p>
+        <p id="homeHint" class="hint">Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。</p>
       </section>
     </main>
 
@@ -113,6 +116,6 @@
     </dialog>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.5.0"></script>
 </body>
 </html>

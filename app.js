@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  const IROTO_WEB_VERSION = "2.5.0";
+
   const els = {
     canvas: document.getElementById("stage"),
     langSelect: document.getElementById("langSelect"),
@@ -50,8 +52,10 @@
     ja: {
       htmlLang: "ja",
       fileNone: "写真未選択",
-      heroText: "写真を選択または撮影し、スマートフォンを傾けて演奏します。",
-      hint: "Android は Chrome、iPhone は Safari を推奨します。モーションセンサーの使用を許可してください。",
+      heroText: "写真を選択または撮影し、傾けて演奏します。",
+      heroHtml: "写真を選択または撮影し、<br>傾けて演奏します。",
+      hint: "Android は Chrome、iPhone は Safari 推奨。すべてのセンサー権限を許可してください。",
+      hintHtml: "Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。",
       choosePhoto: "写真を選択",
       takePhotoFromHome: "写真を撮影",
       photoTitle: "写真を選択",
@@ -106,8 +110,10 @@
     zh: {
       htmlLang: "zh-CN",
       fileNone: "未选择照片",
-      heroText: "选择或拍摄一张照片，倾斜手机来演奏。",
-      hint: "Android 建议使用 Chrome，iPhone 建议使用 Safari，并允许运动传感器权限。",
+      heroText: "选择或拍摄照片，倾斜手机演奏。",
+      heroHtml: "选择或拍摄照片，<br>倾斜手机演奏。",
+      hint: "Android 建议 Chrome，iPhone 建议 Safari。请允许所有传感器权限。",
+      hintHtml: "Android 建议 Chrome，iPhone 建议 Safari。<br>请允许所有传感器权限。",
       choosePhoto: "选择照片",
       takePhotoFromHome: "拍摄照片",
       photoTitle: "选择照片",
@@ -162,8 +168,10 @@
     en: {
       htmlLang: "en",
       fileNone: "No photo selected",
-      heroText: "Select or take a photo, then tilt your phone to perform.",
-      hint: "Chrome is recommended on Android, Safari on iPhone. Please allow motion sensor access.",
+      heroText: "Select or take a photo, then tilt to perform.",
+      heroHtml: "Select or take a photo,<br>then tilt to perform.",
+      hint: "Chrome is recommended on Android, Safari on iPhone. Please allow all sensor permissions.",
+      hintHtml: "Chrome is recommended on Android,<br>Safari on iPhone. Allow all sensor permissions.",
       choosePhoto: "Choose Photo",
       takePhotoFromHome: "Take Photo",
       photoTitle: "Choose Photo",
@@ -227,14 +235,19 @@
     if (el) el.textContent = value;
   }
 
+  function setHtml(selector, value) {
+    const el = document.querySelector(selector);
+    if (el) el.innerHTML = value;
+  }
+
   function applyLanguage(lang) {
     state.currentLang = I18N[lang] ? lang : "ja";
     if (els.langSelect) els.langSelect.value = state.currentLang;
     document.documentElement.lang = t("htmlLang");
 
     if (!state.image) els.fileName.textContent = t("fileNone");
-    setText("#emptyState p:not(.hint)", t("heroText"));
-    setText("#emptyState .hint", t("hint"));
+    setHtml("#homeLead", t("heroHtml"));
+    setHtml("#homeHint", t("hintHtml"));
     els.choosePhotoBtn.textContent = t("choosePhoto");
     els.cameraBtn.textContent = t("takePhotoFromHome");
     els.photoBtn.title = t("photoTitle");

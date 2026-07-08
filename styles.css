@@ -1000,3 +1000,70 @@ html, body, #app {
     left: calc(env(safe-area-inset-left) + 18px) !important;
   }
 }
+
+
+/* v2.5 cache-friendly UI text and language selector refinement */
+.lang-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  text-align: center !important;
+  text-align-last: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  background-image: none !important;
+}
+
+.lang-select::-ms-expand {
+  display: none;
+}
+
+.empty-state {
+  padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+}
+
+#homeLead {
+  max-width: min(82vw, 360px);
+  line-height: 1.55;
+  text-wrap: balance;
+}
+
+#homeHint {
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  max-width: none !important;
+  margin: 0 auto !important;
+  line-height: 1.45;
+  font-size: 12px;
+  text-wrap: balance;
+  opacity: 0.86;
+}
+
+.dialog-card p,
+.compat-row small,
+.file-name {
+  overflow-wrap: anywhere;
+  line-break: strict;
+}
+
+@media (max-width: 520px) {
+  #homeHint {
+    left: 18px;
+    right: 18px;
+    font-size: 11.5px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .empty-state {
+    padding-bottom: calc(54px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #homeHint {
+    left: calc(22px + env(safe-area-inset-left));
+    right: calc(22px + env(safe-area-inset-right));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+}
