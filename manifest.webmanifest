@@ -1,0 +1,11 @@
+{
+  "name": "Iroto Web",
+  "short_name": "Iroto",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#05070b",
+  "theme_color": "#06080c",
+  "icons": [],
+  "orientation": "any",
+  "lang": "ja"
+}

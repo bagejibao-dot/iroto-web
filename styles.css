@@ -1,0 +1,943 @@
+:root {
+  color-scheme: dark;
+  --bg: #05070b;
+  --panel: rgba(12, 16, 24, 0.72);
+  --panel-strong: rgba(12, 16, 24, 0.92);
+  --text: #f6f8ff;
+  --muted: rgba(246, 248, 255, 0.72);
+  --accent: #4c8dff;
+  --danger: #ff6060;
+  --border: rgba(255, 255, 255, 0.14);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button, input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.topbar, .bottombar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+.topbar {
+  top: 0;
+  height: calc(64px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 14px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  min-width: 0;
+  text-align: center;
+  line-height: 1.15;
+}
+
+#appTitle {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.file-name {
+  display: block;
+  max-width: min(78vw, 720px);
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  position: absolute;
+  right: 14px;
+  top: calc(env(safe-area-inset-top) + 13px);
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+.stage-wrap {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+#stage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.empty-state {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 35%, rgba(76,141,255,0.18), transparent 36%),
+              linear-gradient(180deg, #080b12, #030409);
+}
+
+.empty-state h1 {
+  margin: 6px 0 0;
+  font-size: 28px;
+}
+
+.empty-state p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.logo-dot {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #4c8dff, #8ee8ff);
+  color: #06101e;
+  font-size: 44px;
+  font-weight: 800;
+}
+
+.empty-actions, .dialog-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primary-btn, .secondary-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+
+.primary-btn {
+  background: var(--accent);
+  color: white;
+}
+
+.secondary-btn {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.bottombar {
+  bottom: 0;
+  height: calc(70px + env(safe-area-inset-bottom));
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.round-btn, .small-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-weight: 800;
+}
+
+.round-btn.record.recording,
+.round-btn.record.armed {
+  color: var(--danger);
+}
+
+.bpm-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.small-btn {
+  width: 38px;
+  height: 38px;
+}
+
+.pill {
+  min-width: 88px;
+  height: 38px;
+  padding: 0 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.play-btn {
+  position: fixed;
+  z-index: 22;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(10, 14, 22, 0.72);
+  color: white;
+  font-size: 36px;
+  font-weight: 800;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dialog {
+  border: none;
+  padding: 0;
+  border-radius: 24px;
+  background: transparent;
+}
+
+.dialog::backdrop {
+  background: rgba(0,0,0,0.55);
+}
+
+.dialog-card {
+  width: min(92vw, 420px);
+  padding: 22px;
+  border-radius: 24px;
+  background: #fff;
+  color: #15171c;
+  box-shadow: 0 24px 90px rgba(0,0,0,0.35);
+}
+
+.dialog-card h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+}
+
+.dialog-card p {
+  margin: 0 0 14px;
+  color: #5b6474;
+}
+
+.input-label {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 18px;
+  color: #2a3140;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input-label input {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #cfd6e2;
+  background: #fff;
+  color: #111;
+  padding: 0 12px;
+  outline: none;
+}
+
+.input-label input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76,141,255,0.18);
+}
+
+.compat-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.compat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f2f5fa;
+  color: #202633;
+}
+
+.compat-row b {
+  color: #111827;
+}
+
+.compat-ok { color: #167a3a; }
+.compat-warn { color: #a05a00; }
+.compat-bad { color: #b3261e; }
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hidden { display: none !important; }
+
+@media (max-width: 520px) {
+  .bottombar { gap: 5px; padding-left: 8px; padding-right: 8px; }
+  .round-btn { width: 40px; height: 40px; }
+  .small-btn { width: 34px; height: 34px; }
+  .pill { min-width: 78px; padding: 0 8px; }
+}
+
+
+/* v0.2 UI cleanup */
+.play-btn {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.play-btn.transport-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.play-btn.playing {
+  font-size: 0;
+}
+
+.play-btn.playing::before {
+  content: "";
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.recenter-btn {
+  position: fixed;
+  z-index: 22;
+  right: 22px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(10, 14, 22, 0.72);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.recenter-btn.sensor-on {
+  color: #8ee8ff;
+}
+
+.camera-card {
+  width: min(94vw, 720px);
+}
+
+.camera-preview {
+  width: 100%;
+  max-height: min(64vh, 520px);
+  object-fit: contain;
+  border-radius: 16px;
+  background: #05070b;
+  border: 1px solid #d7dde8;
+}
+
+.camera-status {
+  min-height: 20px;
+  margin-top: 10px !important;
+}
+
+@media (max-width: 520px) {
+  .recenter-btn {
+    right: 18px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    width: 46px;
+    height: 46px;
+  }
+}
+
+
+/* v0.3 Android Chrome sensor diagnostics */
+.sensor-status {
+  position: fixed;
+  z-index: 22;
+  right: 78px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  min-width: 96px;
+  max-width: 46vw;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(10, 14, 22, 0.72);
+  color: rgba(255,255,255,0.86);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sensor-status.ok {
+  color: #8ee8ff;
+}
+
+.sensor-status.warn {
+  color: #ffd37a;
+}
+
+.sensor-status.bad {
+  color: #ff9a9a;
+}
+
+@media (max-width: 520px) {
+  .sensor-status {
+    right: 70px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    max-width: 52vw;
+  }
+}
+
+
+/* v0.6 app-aligned performance UI */
+.topbar.performance-hidden,
+.bottombar.performance-hidden,
+.sensor-status.performance-hidden,
+.recenter-btn.performance-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.recenter-btn {
+  /* Align with the right-side record button in the bottom bar. */
+  right: 12px;
+}
+
+@media (max-width: 520px) {
+  .recenter-btn {
+    right: 10px;
+  }
+}
+
+
+/* v0.7 dialog readability: white card + visible buttons */
+.dialog-card .secondary-btn {
+  color: #15171c;
+  background: #f1f4f8;
+  border-color: #cfd7e3;
+}
+
+.dialog-card .primary-btn {
+  color: #ffffff;
+  background: var(--accent);
+}
+
+/* v0.7: controls are hidden/shown as a group during performance, like Android v5.26 */
+.topbar.performance-hidden,
+.bottombar.performance-hidden,
+.sensor-status.performance-hidden,
+.recenter-btn.performance-hidden {
+  visibility: hidden;
+}
+
+.topbar.performance-visible,
+.bottombar.performance-visible,
+.sensor-status.performance-visible,
+.recenter-btn.performance-visible {
+  visibility: visible;
+}
+
+
+/* v0.8 stricter Android v5.26 alignment */
+html, body, #app {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.sensor-status {
+  display: none !important;
+}
+
+.dialog-card {
+  overflow: hidden;
+  max-height: none;
+}
+
+.dialog-card .dialog-actions {
+  overflow: hidden;
+}
+
+.dialog-card button {
+  color: #15171c;
+}
+
+.dialog-card .primary-btn {
+  color: #ffffff;
+}
+
+.dialog-card .secondary-btn {
+  color: #15171c !important;
+  background: #f1f4f8 !important;
+  border-color: #cfd7e3 !important;
+}
+
+.photo-source-card {
+  overflow: hidden;
+}
+
+.photo-source-card .dialog-actions {
+  flex-direction: column;
+}
+
+.photo-source-card .primary-btn,
+.photo-source-card .secondary-btn {
+  width: 100%;
+}
+
+/* Hide browser selection/callout during performance-like interaction */
+#stage {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+
+/* v0.9 photo source dialog cleanup */
+.dialog {
+  overflow: hidden !important;
+}
+
+.dialog-card,
+.photo-source-card {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  max-width: 88vw;
+}
+
+.photo-source-card {
+  width: min(88vw, 360px);
+}
+
+.photo-source-card .dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  overflow: hidden !important;
+}
+
+.photo-source-card .primary-btn,
+.photo-source-card .secondary-btn {
+  width: 100%;
+}
+
+.cancel-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #5b6474;
+  font-weight: 700;
+}
+
+.cancel-btn:active {
+  background: rgba(0,0,0,0.06);
+}
+
+
+/* v1.5 App-like recenter/record button alignment */
+.recenter-btn {
+  width: 46px !important;
+  height: 46px !important;
+  right: 12px !important;
+  bottom: calc(86px + env(safe-area-inset-bottom)) !important;
+}
+
+.round-btn.record.disabled,
+.round-btn.record[aria-disabled="true"] {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+
+
+/* v1.7 language switch and final UI alignment */
+.lang-select {
+  position: absolute;
+  left: 14px;
+  top: calc(env(safe-area-inset-top) + 13px);
+  height: 38px;
+  max-width: 96px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+.lang-select option {
+  color: #111;
+  background: #fff;
+}
+
+.topbar .title {
+  max-width: calc(100vw - 230px);
+}
+
+.bottombar {
+  --bottom-bar-height: 70px;
+  --bottom-bar-padding-top: 10px;
+  --bottom-bar-padding-bottom: 10px;
+}
+
+.round-btn {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.recenter-btn {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  right: 14px !important;
+  /* Align to the center line of the bottom bar controls:
+     bottom bar content center = safe-area + 10px + 22px = safe-area + 32px.
+     Recenter center should sit one button-height + 20px above that line. */
+  bottom: calc(env(safe-area-inset-bottom) + 32px + 44px + 20px - 22px) !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 520px) {
+  .round-btn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+  }
+
+  .recenter-btn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    right: 12px !important;
+    bottom: calc(env(safe-area-inset-bottom) + 31px + 42px + 20px - 21px) !important;
+    font-size: 19px !important;
+  }
+
+  .lang-select {
+    left: 10px;
+    max-width: 84px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .topbar .title {
+    max-width: calc(100vw - 205px);
+  }
+}
+
+/* Restore compatibility dialog scrolling */
+.compat-card {
+  width: min(92vw, 520px) !important;
+  max-height: min(78vh, 680px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y !important;
+}
+
+.compat-list {
+  padding-bottom: 4px;
+}
+
+
+/* v1.8 bottom control alignment refinements */
+.bottombar {
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+}
+
+.recenter-btn {
+  right: 22px !important;
+  /* bottom bar top is safe-area + 70px; record button top margin is about 13px.
+     Put recenter bottom at the same visual gap above the bar. */
+  bottom: calc(env(safe-area-inset-bottom) + 83px) !important;
+}
+
+@media (max-width: 520px) {
+  .bottombar {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .recenter-btn {
+    right: 18px !important;
+    bottom: calc(env(safe-area-inset-bottom) + 84px) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .bottombar {
+    padding-left: calc(22px + env(safe-area-inset-left)) !important;
+    padding-right: calc(22px + env(safe-area-inset-right)) !important;
+  }
+
+  .recenter-btn {
+    right: calc(22px + env(safe-area-inset-right)) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 83px) !important;
+  }
+}
+
+
+/* v1.9 top/bottom axis alignment and input/autoselect refinements */
+.lang-select {
+  left: 22px !important;
+  top: calc(env(safe-area-inset-top) + 10px) !important;
+  height: 44px !important;
+  border-radius: 999px !important;
+}
+
+.icon-btn {
+  right: 22px !important;
+  top: calc(env(safe-area-inset-top) + 10px) !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 520px) {
+  .lang-select {
+    left: 18px !important;
+    top: calc(env(safe-area-inset-top) + 11px) !important;
+    height: 42px !important;
+    border-radius: 999px !important;
+  }
+
+  .icon-btn {
+    right: 18px !important;
+    top: calc(env(safe-area-inset-top) + 11px) !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .lang-select {
+    left: calc(22px + env(safe-area-inset-left)) !important;
+  }
+
+  .icon-btn {
+    right: calc(22px + env(safe-area-inset-right)) !important;
+  }
+}
+
+.filename-edit {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid #cfd6e2;
+  background: #fff;
+  color: #111;
+  padding: 0 12px;
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.filename-edit:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76,141,255,0.18);
+}
+
+.small-btn,
+.bpm-group,
+.pill {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.small-btn {
+  touch-action: manipulation;
+}
+
+
+/* v2.0: App-like lighter overlay transparency */
+.topbar,
+.bottombar {
+  background: rgba(6, 8, 12, 0.46) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.play-btn,
+.recenter-btn {
+  background: rgba(10, 14, 22, 0.48) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.round-btn,
+.small-btn,
+.pill,
+.icon-btn,
+.lang-select {
+  background-color: rgba(255,255,255,0.06) !important;
+}
+
+.performance-visible {
+  opacity: 1;
+}
+
+.performance-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* v2.1 recording elapsed timer */
+.record-timer {
+  position: fixed;
+  z-index: 24;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 76px);
+  transform: translateX(-50%);
+  min-width: 88px;
+  height: 34px;
+  padding: 0 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(10, 14, 22, 0.52);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.record-timer.hidden {
+  display: none !important;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .record-timer {
+    top: calc(env(safe-area-inset-top) + 12px);
+  }
+}
+
+
+/* v2.2 lighter overlay and landscape timer placement */
+.topbar,
+.bottombar {
+  background: rgba(6, 8, 12, 0.34) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.play-btn,
+.recenter-btn {
+  background: rgba(10, 14, 22, 0.34) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.round-btn,
+.small-btn,
+.pill,
+.icon-btn,
+.lang-select {
+  background-color: rgba(255,255,255,0.045) !important;
+}
+
+.record-timer {
+  background: rgba(10, 14, 22, 0.34) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .record-timer {
+    left: calc(22px + env(safe-area-inset-left)) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 920px) {
+  .record-timer {
+    left: calc(18px + env(safe-area-inset-left)) !important;
+  }
+}

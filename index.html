@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06080c" />
+  <title>Iroto Web</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <select id="langSelect" class="lang-select" aria-label="Language">
+        <option value="ja" selected>日本語</option>
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+      <div class="title">
+        <span id="appTitle">Iroto Web</span>
+        <span id="fileName" class="file-name">写真未選択</span>
+      </div>
+      <button id="helpBtn" class="icon-btn" type="button" aria-label="互換性">?</button>
+    </header>
+
+    <main class="stage-wrap">
+      <canvas id="stage" aria-label="Iroto performance canvas"></canvas>
+
+      <section id="emptyState" class="empty-state">
+        <div class="logo-dot">♪</div>
+        <h1>Iroto Web</h1>
+        <p>写真を選択または撮影し、スマートフォンを傾けて演奏します。</p>
+        <div class="empty-actions">
+          <button id="choosePhotoBtn" class="primary-btn" type="button">写真を選択</button>
+          <button id="cameraBtn" class="secondary-btn" type="button">写真を撮影</button>
+        </div>
+        <p class="hint">Android は Chrome、iPhone は Safari を推奨します。モーションセンサーの使用を許可してください。</p>
+      </section>
+    </main>
+
+    <footer id="bottomBar" class="bottombar hidden">
+      <button id="photoBtn" class="round-btn" type="button" title="写真を選択">▧</button>
+
+      <div class="bpm-group">
+        <button id="bpmMinus" class="small-btn" type="button">−</button>
+        <span id="bpmLabel" class="pill">BPM 100</span>
+        <button id="bpmPlus" class="small-btn" type="button">+</button>
+      </div>
+
+      <button id="recordBtn" class="round-btn record" type="button" title="録画">○</button>
+    </footer>
+
+    <div id="sensorStatus" class="sensor-status hidden" aria-hidden="true">センサー</div>
+    <button id="sensorBtn" class="recenter-btn hidden" type="button" title="センサーを有効化 / 再センター">⌖</button>
+    <button id="playBtn" class="play-btn hidden" type="button" aria-label="再生">▶</button>
+    <div id="recordTimer" class="record-timer hidden" aria-live="polite">● 00:00</div>
+
+    <input id="fileInput" type="file" accept="image/*" hidden />
+    <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden />
+
+
+    <dialog id="photoSourceDialog" class="dialog">
+      <form method="dialog" class="dialog-card photo-source-card">
+        <h2>写真の選択</h2>
+        <p>新しい演奏用の写真を選択してください。</p>
+        <div class="dialog-actions">
+          <button id="sourceAlbumBtn" class="primary-btn" type="button">写真を選択</button>
+          <button id="sourceCameraBtn" class="secondary-btn" type="button">写真を撮影</button>
+          <button id="sourceCancelBtn" class="cancel-btn" type="button">キャンセル</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="saveDialog" class="dialog">
+      <form method="dialog" class="dialog-card">
+        <h2>演奏動画を保存</h2>
+        <p id="recordInfo">録画が完了しました。</p>
+        <label class="input-label">
+          ファイル名
+          <div id="saveNameInput" class="filename-edit" contenteditable="true" role="textbox" aria-label="filename" spellcheck="false" autocorrect="off" autocapitalize="off" translate="no">Iroto</div>
+        </label>
+        <div class="dialog-actions">
+          <button id="discardBtn" class="secondary-btn" value="discard" type="button">削除</button>
+          <button id="saveBtn" class="primary-btn" value="save" type="button">保存</button>
+        </div>
+      </form>
+    </dialog>
+
+
+    <dialog id="cameraDialog" class="dialog">
+      <form method="dialog" class="dialog-card camera-card">
+        <h2>写真を撮影</h2>
+        <video id="cameraPreview" class="camera-preview" autoplay playsinline muted></video>
+        <p id="cameraStatus" class="camera-status">カメラを起動しています...</p>
+        <div class="dialog-actions">
+          <button id="closeCameraBtn" class="secondary-btn" type="button">キャンセル</button>
+          <button id="takePhotoBtn" class="primary-btn" type="button">撮影</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="compatDialog" class="dialog">
+      <form method="dialog" class="dialog-card compat-card">
+        <h2>互換性チェック</h2>
+        <div id="compatList" class="compat-list"></div>
+        <p class="hint">
+          センサー機能は通常 HTTPS が必要です。録画形式はブラウザに応じて MP4 または WebM が自動選択されます。
+        </p>
+        <div class="dialog-actions">
+          <button class="primary-btn" value="ok">閉じる</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
