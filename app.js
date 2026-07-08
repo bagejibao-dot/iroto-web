@@ -329,6 +329,7 @@
     recordedBlob: null,
     recordedMime: "",
     recordedExt: "webm",
+    recordingDurationMs: 0,
     sensorEnabled: false,
     sensorMode: "touch",
     sensorSource: "none",
@@ -1243,6 +1244,185 @@
     }
   }
 
+  function readEbmlIdLength(firstByte) {
+    if (firstByte >= 0x80) return 1;
+    if (firstByte >= 0x40) return 2;
+    if (firstByte >= 0x20) return 3;
+    if (firstByte >= 0x10) return 4;
+    return 0;
+  }
+
+  function readEbmlSize(bytes, pos) {
+    const first = bytes[pos];
+    if (!first) return null;
+
+    let length = 1;
+    let marker = 0x80;
+    while (length <= 8 && (first & marker) === 0) {
+      marker >>= 1;
+      length++;
+    }
+    if (length > 8 || pos + length > bytes.length) return null;
+
+    let value = first & (marker - 1);
+    let unknown = value === (marker - 1);
+    for (let i = 1; i < length; i++) {
+      value = value * 256 + bytes[pos + i];
+      if (bytes[pos + i] !== 0xff) unknown = false;
+    }
+
+    return { value, length, unknown };
+  }
+
+  function readEbmlElement(bytes, pos, end) {
+    if (pos >= end) return null;
+    const idLen = readEbmlIdLength(bytes[pos]);
+    if (!idLen || pos + idLen >= end) return null;
+
+    let id = 0;
+    for (let i = 0; i < idLen; i++) id = id * 256 + bytes[pos + i];
+
+    const size = readEbmlSize(bytes, pos + idLen);
+    if (!size) return null;
+
+    const dataStart = pos + idLen + size.length;
+    const dataEnd = size.unknown ? end : dataStart + size.value;
+    if (dataStart > end || (!size.unknown && dataEnd > end)) return null;
+
+    return {
+      id,
+      idLen,
+      sizeLen: size.length,
+      size: size.value,
+      unknownSize: size.unknown,
+      headerStart: pos,
+      dataStart,
+      dataEnd
+    };
+  }
+
+  function findEbmlChild(bytes, start, end, targetId) {
+    let pos = start;
+    while (pos < end) {
+      const el = readEbmlElement(bytes, pos, end);
+      if (!el) return null;
+      if (el.id === targetId) return el;
+      if (el.unknownSize) return null;
+      pos = el.dataEnd;
+    }
+    return null;
+  }
+
+  function encodeEbmlSize(value, preferredLength = 0) {
+    const lengths = preferredLength ? [preferredLength, 1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5, 6, 7, 8];
+    for (const length of lengths) {
+      if (length < 1 || length > 8) continue;
+      const max = Math.pow(2, 7 * length) - 2; // all-ones is reserved for unknown size
+      if (value > max) continue;
+
+      const bytes = new Uint8Array(length);
+      let remaining = value;
+      for (let i = length - 1; i >= 0; i--) {
+        bytes[i] = remaining & 0xff;
+        remaining = Math.floor(remaining / 256);
+      }
+      bytes[0] |= 1 << (8 - length);
+      return bytes;
+    }
+    return null;
+  }
+
+  function readUnsignedInteger(bytes, start, end) {
+    let value = 0;
+    for (let i = start; i < end; i++) value = value * 256 + bytes[i];
+    return value;
+  }
+
+  function makeWebmDurationElement(durationMs, timecodeScale) {
+    const durationTicks = Math.max(1, durationMs * 1_000_000 / (timecodeScale || 1_000_000));
+    const out = new Uint8Array(11);
+    out[0] = 0x44;
+    out[1] = 0x89;
+    out[2] = 0x88; // size = 8 bytes
+    new DataView(out.buffer).setFloat64(3, durationTicks, false);
+    return out;
+  }
+
+  async function fixWebmDurationMetadata(blob, durationMs) {
+    if (!blob || !durationMs || durationMs < 250) return blob;
+    if (!/webm/i.test(blob.type || "") && state.recordedExt !== "webm") return blob;
+
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    const segment = findEbmlChild(bytes, 0, bytes.length, 0x18538067);
+    if (!segment) return blob;
+
+    const segmentEnd = segment.unknownSize ? bytes.length : segment.dataEnd;
+    const info = findEbmlChild(bytes, segment.dataStart, segmentEnd, 0x1549a966);
+    if (!info || info.unknownSize) return blob;
+
+    const timecodeScaleEl = findEbmlChild(bytes, info.dataStart, info.dataEnd, 0x2ad7b1);
+    const timecodeScale = timecodeScaleEl
+      ? readUnsignedInteger(bytes, timecodeScaleEl.dataStart, timecodeScaleEl.dataEnd)
+      : 1_000_000;
+
+    const durationElement = makeWebmDurationElement(durationMs, timecodeScale);
+    const existingDuration = findEbmlChild(bytes, info.dataStart, info.dataEnd, 0x4489);
+
+    let newInfoData;
+    if (existingDuration) {
+      const before = bytes.slice(info.dataStart, existingDuration.headerStart);
+      const after = bytes.slice(existingDuration.dataEnd, info.dataEnd);
+      newInfoData = new Uint8Array(before.length + durationElement.length + after.length);
+      newInfoData.set(before, 0);
+      newInfoData.set(durationElement, before.length);
+      newInfoData.set(after, before.length + durationElement.length);
+    } else {
+      const oldInfoData = bytes.slice(info.dataStart, info.dataEnd);
+      newInfoData = new Uint8Array(oldInfoData.length + durationElement.length);
+      newInfoData.set(oldInfoData, 0);
+      newInfoData.set(durationElement, oldInfoData.length);
+    }
+
+    const delta = (info.idLen + info.sizeLen + newInfoData.length) - (info.dataEnd - info.headerStart);
+    if (delta !== 0 && !segment.unknownSize) {
+      // Avoid rewriting finite Segment size fields in a risky way. Chrome's
+      // MediaRecorder normally uses unknown Segment size, so this branch should
+      // rarely be hit.
+      return blob;
+    }
+
+    const newInfoSize = encodeEbmlSize(newInfoData.length, info.sizeLen);
+    if (!newInfoSize) return blob;
+
+    const infoId = bytes.slice(info.headerStart, info.headerStart + info.idLen);
+    const beforeInfo = bytes.slice(0, info.headerStart);
+    const afterInfo = bytes.slice(info.dataEnd);
+
+    const fixed = new Uint8Array(beforeInfo.length + infoId.length + newInfoSize.length + newInfoData.length + afterInfo.length);
+    let offset = 0;
+    fixed.set(beforeInfo, offset); offset += beforeInfo.length;
+    fixed.set(infoId, offset); offset += infoId.length;
+    fixed.set(newInfoSize, offset); offset += newInfoSize.length;
+    fixed.set(newInfoData, offset); offset += newInfoData.length;
+    fixed.set(afterInfo, offset);
+
+    return new Blob([fixed], { type: blob.type || "video/webm" });
+  }
+
+  async function finalizeRecordedBlob(blob) {
+    if (state.recordedExt === "webm" || /webm/i.test(blob?.type || "")) {
+      try {
+        return await fixWebmDurationMetadata(blob, state.recordingDurationMs);
+      } catch (err) {
+        console.warn("WebM duration metadata fix failed", err);
+        return blob;
+      }
+    }
+    return blob;
+  }
+
   function startRecording() {
     if (!setupRecordingCanvas() || !recordingCanvas.captureStream || !window.MediaRecorder || !audio.recorderDest) {
       alert(t("recordingUnsupported"));
@@ -1275,20 +1455,25 @@
       if (e.data && e.data.size > 0) state.recordedChunks.push(e.data);
     };
 
-    state.recorder.onstop = () => {
-      state.recordedBlob = new Blob(state.recordedChunks, { type: state.recordedMime });
+    state.recorder.onstop = async () => {
+      const rawBlob = new Blob(state.recordedChunks, { type: state.recordedMime });
+      state.recordedBlob = await finalizeRecordedBlob(rawBlob);
       showSaveDialog();
     };
 
     state.recording = true;
+    state.recordingDurationMs = 0;
     drawRecordingFrame();
-    state.recorder.start(250);
+    state.recorder.start();
     state.recordArmed = false;
     startRecordingTimer();
     updateRecordButton();
   }
 
   function stopRecording() {
+    if (state.recordingStartedAtMs) {
+      state.recordingDurationMs = Math.max(0, performance.now() - state.recordingStartedAtMs);
+    }
     state.recording = false;
     stopRecordingTimer();
     updateRecordButton();
