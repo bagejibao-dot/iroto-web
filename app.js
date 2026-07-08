@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.5.0";
+  const IROTO_WEB_VERSION = "2.6.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -52,8 +52,8 @@
     ja: {
       htmlLang: "ja",
       fileNone: "写真未選択",
-      heroText: "写真を選択または撮影し、傾けて演奏します。",
-      heroHtml: "写真を選択または撮影し、<br>傾けて演奏します。",
+      heroText: "写真を選択または撮影し、傾けて演奏しましょう。",
+      heroHtml: "写真を選択または撮影し、<br>傾けて演奏しましょう。",
       hint: "Android は Chrome、iPhone は Safari 推奨。すべてのセンサー権限を許可してください。",
       hintHtml: "Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。",
       choosePhoto: "写真を選択",
@@ -65,7 +65,7 @@
       play: "再生",
       stop: "停止",
       sourceTitle: "写真の選択",
-      sourceText: "新しい演奏用の写真を選択してください。",
+      sourceText: "演奏用の写真を選択してください。",
       sourceAlbum: "写真を選択",
       sourceCamera: "写真を撮影",
       cancel: "キャンセル",
@@ -73,7 +73,7 @@
       recordDone: "録画が完了しました。",
       recordFormat: "形式",
       recordSize: "サイズ",
-      discardConfirm: "録画データを削除しますか？この操作は元に戻せません。",
+      discardConfirm: "録画を削除しますか？",
       fileName: "ファイル名",
       discard: "削除",
       save: "保存",
@@ -86,7 +86,7 @@
       photoReadFailed: "写真の読み込みに失敗しました。",
       takePhoto: "撮影",
       compatTitle: "互換性チェック",
-      compatHint: "センサー機能は通常 HTTPS が必要です。録画形式はブラウザに応じて MP4 または WebM が自動選択されます。",
+      compatHint: "センサー機能には通常 HTTPS が必要です。録画形式は自動選択されます。",
       close: "閉じる",
       sensorLabel: "センサー",
       compatStatusUnavailable: "不可",
