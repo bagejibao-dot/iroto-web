@@ -43,6 +43,8 @@
   const ctx = els.canvas.getContext("2d", { alpha: false });
   const sampleCanvas = document.createElement("canvas");
   const sampleCtx = sampleCanvas.getContext("2d", { willReadFrequently: true });
+  const recordingCanvas = document.createElement("canvas");
+  const recordingCtx = recordingCanvas.getContext("2d", { alpha: false });
 
   const I18N = {
     ja: {
@@ -320,6 +322,8 @@
     recording: false,
     recordingStartedAtMs: 0,
     recordingTimerId: null,
+    recordingCanvasWidth: 0,
+    recordingCanvasHeight: 0,
     recorder: null,
     recordedChunks: [],
     recordedBlob: null,
@@ -425,11 +429,10 @@
     const iw = state.image.naturalWidth || state.image.width;
     const ih = state.image.naturalHeight || state.image.height;
 
-    // v2.2: match the app-like full-screen photo behavior.
-    // Use cover instead of contain so the display and recorded video fill the
-    // canvas without black bars. The crop is centered and the aspect ratio is
-    // preserved.
-    const scale = Math.max(cw / iw, ch / ih);
+    // v2.3: performance display keeps the original photo aspect ratio.
+    // Recording uses a separate photo-aspect canvas, so the on-screen image
+    // should not be stretched or cropped to full screen.
+    const scale = Math.min(cw / iw, ch / ih);
     const w = iw * scale;
     const h = ih * scale;
     state.imageRect = { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
@@ -450,6 +453,146 @@
     const n = screenToNorm(clientX, clientY);
     state.targetNormX = n.x;
     state.targetNormY = n.y;
+  }
+
+  function evenDimension(value) {
+    return Math.max(2, Math.round(value / 2) * 2);
+  }
+
+  function setupRecordingCanvas() {
+    if (!state.image) return false;
+    const iw = state.image.naturalWidth || state.image.width || 1;
+    const ih = state.image.naturalHeight || state.image.height || 1;
+    const aspect = iw / ih;
+
+    let rw;
+    let rh;
+    if (aspect >= 1) {
+      rh = 1080;
+      rw = rh * aspect;
+      if (rw > 1920) {
+        rw = 1920;
+        rh = rw / aspect;
+      }
+    } else {
+      rw = 1080;
+      rh = rw / aspect;
+      if (rh > 1920) {
+        rh = 1920;
+        rw = rh * aspect;
+      }
+    }
+
+    recordingCanvas.width = evenDimension(rw);
+    recordingCanvas.height = evenDimension(rh);
+    state.recordingCanvasWidth = recordingCanvas.width;
+    state.recordingCanvasHeight = recordingCanvas.height;
+    return true;
+  }
+
+  function recordingCursorRadius(rect) {
+    return Math.max(20, Math.min(rect.w, rect.h) * 0.036);
+  }
+
+  function drawRecordingFrame() {
+    if (!state.recording || !state.image || !recordingCtx || !recordingCanvas.width || !recordingCanvas.height) return;
+
+    const cw = recordingCanvas.width;
+    const ch = recordingCanvas.height;
+    const r = { x: 0, y: 0, w: cw, h: ch };
+
+    recordingCtx.save();
+    recordingCtx.clearRect(0, 0, cw, ch);
+    recordingCtx.fillStyle = "#000";
+    recordingCtx.fillRect(0, 0, cw, ch);
+
+    // Recording canvas follows the photo aspect ratio, so drawing the image
+    // to the full canvas preserves aspect ratio without black bars.
+    recordingCtx.drawImage(state.image, 0, 0, cw, ch);
+
+    if (state.playing) {
+      if (!state.currentMidi) {
+        recordingCtx.fillStyle = "rgba(0,0,0,0.08)";
+        recordingCtx.fillRect(0, 0, cw, ch);
+      }
+
+      drawTrailOn(recordingCtx, r, recordingCursorRadius(r), false);
+      drawCursorOn(recordingCtx, r, recordingCursorRadius(r) * 0.98, Math.max(1.2, cw / 1080 * 1.2));
+    }
+
+    recordingCtx.restore();
+  }
+
+  function drawTrailOn(targetCtx, rect, baseRadius, pruneTrail = true) {
+    if (!state.image || state.trail.length < 2) return;
+    const now = performance.now();
+
+    targetCtx.lineCap = "round";
+    targetCtx.lineJoin = "round";
+
+    for (let i = 1; i < state.trail.length; i++) {
+      const a = state.trail[i - 1];
+      const b = state.trail[i];
+      const age = now - b.t;
+      if (age < 0 || age > TRAIL_DURATION_MS) continue;
+      const life = 1 - age / TRAIL_DURATION_MS;
+
+      const x1 = rect.x + a.x * rect.w;
+      const y1 = rect.y + a.y * rect.h;
+      const x2 = rect.x + b.x * rect.w;
+      const y2 = rect.y + b.y * rect.h;
+
+      targetCtx.strokeStyle = `rgba(120,225,255,${0.13 * life})`;
+      targetCtx.lineWidth = Math.max(14, baseRadius * (1.05 + 0.72 * life));
+      targetCtx.beginPath();
+      targetCtx.moveTo(x1, y1);
+      targetCtx.lineTo(x2, y2);
+      targetCtx.stroke();
+
+      targetCtx.strokeStyle = `rgba(255,255,255,${0.58 * life})`;
+      targetCtx.lineWidth = Math.max(7, baseRadius * (0.52 + 0.40 * life));
+      targetCtx.beginPath();
+      targetCtx.moveTo(x1, y1);
+      targetCtx.lineTo(x2, y2);
+      targetCtx.stroke();
+    }
+
+    if (pruneTrail) state.trail = state.trail.filter(p => now - p.t <= TRAIL_DURATION_MS);
+  }
+
+  function drawCursorOn(targetCtx, rect, radius, lineWidth) {
+    if (!state.image || !state.playing) return;
+    const x = rect.x + state.normX * rect.w;
+    const y = rect.y + state.normY * rect.h;
+
+    targetCtx.save();
+    targetCtx.lineCap = "round";
+
+    targetCtx.strokeStyle = "rgba(255,255,255,0.84)";
+    targetCtx.lineWidth = lineWidth;
+    targetCtx.beginPath();
+    targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+    targetCtx.stroke();
+
+    targetCtx.strokeStyle = state.sampleColor;
+    targetCtx.globalAlpha = 0.95;
+    targetCtx.lineWidth = Math.max(6.8, radius * 0.30);
+    targetCtx.beginPath();
+    targetCtx.arc(x, y, radius * 0.78, 0, Math.PI * 2);
+    targetCtx.stroke();
+
+    const label = state.currentNoteLabel || "Rest";
+    targetCtx.globalAlpha = 1;
+    targetCtx.font = `800 ${label === "Rest" ? radius * 0.44 : radius * 0.56}px system-ui, sans-serif`;
+    targetCtx.textAlign = "center";
+    targetCtx.textBaseline = "middle";
+    targetCtx.shadowColor = "rgba(0,0,0,0.82)";
+    targetCtx.shadowBlur = radius * 0.16;
+    targetCtx.shadowOffsetY = radius * 0.05;
+    targetCtx.fillStyle = label === "Rest" ? "rgba(245,248,252,0.92)" : "#fff";
+    targetCtx.fillText(label, x, y - radius * 0.03);
+
+    targetCtx.restore();
   }
 
   function draw() {
@@ -488,6 +631,8 @@
       ctx.fillStyle = "#06080c";
       ctx.fillRect(0, 0, cw, ch);
     }
+
+    if (state.recording) drawRecordingFrame();
 
     requestAnimationFrame(draw);
   }
@@ -680,42 +825,7 @@
   }
 
   function drawTrail() {
-    if (!state.image || state.trail.length < 2) return;
-    const now = performance.now();
-    const r = state.imageRect;
-    const baseRadius = cursorRadius();
-
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    for (let i = 1; i < state.trail.length; i++) {
-      const a = state.trail[i - 1];
-      const b = state.trail[i];
-      const age = now - b.t;
-      if (age < 0 || age > TRAIL_DURATION_MS) continue;
-      const life = 1 - age / TRAIL_DURATION_MS;
-
-      const x1 = r.x + a.x * r.w;
-      const y1 = r.y + a.y * r.h;
-      const x2 = r.x + b.x * r.w;
-      const y2 = r.y + b.y * r.h;
-
-      ctx.strokeStyle = `rgba(120,225,255,${0.13 * life})`;
-      ctx.lineWidth = Math.max(14, baseRadius * (1.05 + 0.72 * life));
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-
-      ctx.strokeStyle = `rgba(255,255,255,${0.58 * life})`;
-      ctx.lineWidth = Math.max(7, baseRadius * (0.52 + 0.40 * life));
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-
-    state.trail = state.trail.filter(p => now - p.t <= TRAIL_DURATION_MS);
+    drawTrailOn(ctx, state.imageRect, cursorRadius(), true);
   }
 
   function cursorRadius() {
@@ -726,42 +836,7 @@
   }
 
   function drawCursor() {
-    if (!state.image || !state.playing) return;
-    const r = state.imageRect;
-    const x = r.x + state.normX * r.w;
-    const y = r.y + state.normY * r.h;
-    const radius = cursorRadius() * 0.98;
-
-    ctx.save();
-    ctx.lineCap = "round";
-
-    ctx.strokeStyle = "rgba(255,255,255,0.84)";
-    ctx.lineWidth = Math.max(1.2, els.canvas.width / window.innerWidth * 1.2);
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // v1.5: restore the thicker internal color recognition ring, closer to
-    // the Android app's visible sampling layer.
-    ctx.strokeStyle = state.sampleColor;
-    ctx.globalAlpha = 0.95;
-    ctx.lineWidth = Math.max(6.8, radius * 0.30);
-    ctx.beginPath();
-    ctx.arc(x, y, radius * 0.78, 0, Math.PI * 2);
-    ctx.stroke();
-
-    const label = state.currentNoteLabel || "Rest";
-    ctx.globalAlpha = 1;
-    ctx.font = `800 ${label === "Rest" ? radius * 0.44 : radius * 0.56}px system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.shadowColor = "rgba(0,0,0,0.82)";
-    ctx.shadowBlur = radius * 0.16;
-    ctx.shadowOffsetY = radius * 0.05;
-    ctx.fillStyle = label === "Rest" ? "rgba(245,248,252,0.92)" : "#fff";
-    ctx.fillText(label, x, y - radius * 0.03);
-
-    ctx.restore();
+    drawCursorOn(ctx, state.imageRect, cursorRadius() * 0.98, Math.max(1.2, els.canvas.width / window.innerWidth * 1.2));
   }
 
   async function ensureAudio() {
@@ -1169,14 +1244,15 @@
   }
 
   function startRecording() {
-    if (!els.canvas.captureStream || !window.MediaRecorder || !audio.recorderDest) {
+    if (!setupRecordingCanvas() || !recordingCanvas.captureStream || !window.MediaRecorder || !audio.recorderDest) {
       alert(t("recordingUnsupported"));
       state.recordArmed = false;
       updateRecordButton();
       return;
     }
 
-    const stream = els.canvas.captureStream(60);
+    drawRecordingFrame();
+    const stream = recordingCanvas.captureStream(60);
     for (const track of audio.recorderDest.stream.getAudioTracks()) {
       stream.addTrack(track);
     }
@@ -1204,8 +1280,9 @@
       showSaveDialog();
     };
 
-    state.recorder.start(250);
     state.recording = true;
+    drawRecordingFrame();
+    state.recorder.start(250);
     state.recordArmed = false;
     startRecordingTimer();
     updateRecordButton();
