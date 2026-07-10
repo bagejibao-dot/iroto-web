@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.11.0";
+  const IROTO_WEB_VERSION = "2.12.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1052,16 +1052,11 @@
   }
 
   function beginImmersiveFromGesture() {
-    // Browsers only allow fullscreen from user gestures. This mirrors Android's
-    // always-immersive app feel as much as the web platform allows.
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-      try {
-        const p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      } catch (err) {
-        // ignore; playback and UI still work
-      }
-    }
+    // v2.12: Do not request browser fullscreen automatically.
+    // Mobile browsers show a native "how to exit fullscreen" banner that
+    // cannot be hidden by web code. Keeping playback in the normal page avoids
+    // that banner while preserving the performance UI and sensor behavior.
+    return;
   }
 
   async function lockOrientationForPlay() {
@@ -1087,7 +1082,7 @@
       try { screen.orientation.unlock(); } catch (err) { console.warn(err); }
     }
     state.lockedOrientation = false;
-    // Stay fullscreen after playback, matching the Android app's immersive state.
+    // v2.12: playback no longer enters browser fullscreen automatically.
   }
 
   function resetPerformanceState() {

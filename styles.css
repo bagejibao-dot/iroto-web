@@ -1307,3 +1307,13 @@ html, body, #app {
 #cameraDialog {
   display: none !important;
 }
+
+
+/* v2.12 no automatic fullscreen; keep performance canvas filling the visible viewport */
+.stage-wrap {
+  min-height: 100dvh;
+}
+
+#stage {
+  min-height: 100dvh;
+}
