@@ -63,3 +63,57 @@ app.js?v=2.14.1
 styles.css?v=2.14.1
 manifest.webmanifest?v=2.14.1
 ```
+
+---
+
+# v2.14.6 Stable Test 追加内容
+
+これは v2.14.1 を基準にした安定テスト版です。  
+全屏、方向锁定、传感器、准星平滑、录制等核心逻辑不变。
+
+## 1. 主页图标调整
+
+主页的 `♪` 图标改成更有设计感的图标样式：
+
+```text
+渐变背景
+内层圆角环
+高光点
+轻微旋转的音符
+```
+
+## 2. 语言切换按钮圆角
+
+语言切换的长孔圆角与兼容性检查按钮统一，保持更圆润的胶囊形态。
+
+## 3. 英文主页提示修改
+
+英文下方提示改为更完整的表达：
+
+```text
+We recommend Chrome on Android and Safari on iPhone.
+Please allow all permissions.
+```
+
+## 4. 日语兼容性检查细节修改
+
+- 「環境依存」改为更短的「要確認」
+- 「iOS の権限」改为「iOS 権限」
+- iOS 说明缩短，减少单字换行
+- 兼容性检查行增加 `keep-all`，减少日文被拆开换行
+
+## 5. 版本号
+
+资源路径更新为：
+
+```text
+app.js?v=2.14.6
+styles.css?v=2.14.6
+manifest.webmanifest?v=2.14.6
+```
+
+兼容性检查弹窗底部显示：
+
+```text
+v2.14.6 Stable Test
+```

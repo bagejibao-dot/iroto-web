@@ -8,8 +8,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Iroto Web</title>
-  <link rel="manifest" href="manifest.webmanifest?v=2.14.1" />
-  <link rel="stylesheet" href="styles.css?v=2.14.1" />
+  <link rel="manifest" href="manifest.webmanifest?v=2.14.6" />
+  <link rel="stylesheet" href="styles.css?v=2.14.6" />
 </head>
 <body>
   <div id="app">
@@ -30,7 +30,12 @@
       <canvas id="stage" aria-label="Iroto performance canvas"></canvas>
 
       <section id="emptyState" class="empty-state">
-        <div class="logo-dot">♪</div>
+        <div class="logo-dot" aria-hidden="true">
+          <span class="logo-ring"></span>
+          <span class="logo-note">♪</span>
+          <span class="logo-spark logo-spark-a"></span>
+          <span class="logo-spark logo-spark-b"></span>
+        </div>
         <h1>Iroto Web</h1>
         <p id="homeLead">写真を選択し、<br>傾けて演奏しましょう。</p>
         <div class="empty-actions">
@@ -79,7 +84,7 @@
       <form method="dialog" class="dialog-card compat-card">
         <h2>互換性チェック</h2>
         <div id="compatList" class="compat-list"></div>
-        <p id="compatVersion" class="version-label">v2.14.1</p>
+        <p id="compatVersion" class="version-label">v2.14.6 Stable Test</p>
         <p class="hint">
           センサー機能は通常 HTTPS が必要です。録画形式はブラウザに応じて MP4 または WebM が自動選択されます。
         </p>
@@ -90,6 +95,6 @@
     </dialog>
   </div>
 
-  <script src="app.js?v=2.14.1"></script>
+  <script src="app.js?v=2.14.6"></script>
 </body>
 </html>
