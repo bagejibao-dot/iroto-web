@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.16.0";
+  const IROTO_WEB_VERSION = "2.17.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -295,8 +295,6 @@
     hasSmoothValue: false,
     accelOffsetX: 0,
     accelOffsetY: 0,
-    accelSmoothX: 0,
-    accelSmoothY: 0,
     lastMotionAtMs: 0,
     pageState: "home",
     hasPushedPerformanceHistory: false,
@@ -664,7 +662,8 @@
   }
 
   function updateCrosshair() {
-    const smoothing = state.playing ? 0.16 : 0.22;
+    // v2.17: stable baseline from Android v5.26 PerformanceView.updateCrosshair().
+    const smoothing = 0.24;
     state.normX += (state.targetNormX - state.normX) * smoothing;
     state.normY += (state.targetNormY - state.normY) * smoothing;
     state.normX = clamp(state.normX, 0, 1);
@@ -1728,16 +1727,13 @@
   }
 
   function decayAccelerationOffset(dt) {
+    // v2.17: Android v5.26 ACCEL_DECAY_PER_SECOND = 6.0f.
     const ACCEL_DECAY_PER_SECOND = 6.0;
     const decay = Math.exp(-ACCEL_DECAY_PER_SECOND * dt);
     state.accelOffsetX *= decay;
     state.accelOffsetY *= decay;
-    state.accelSmoothX *= decay;
-    state.accelSmoothY *= decay;
     if (Math.abs(state.accelOffsetX) < 0.001) state.accelOffsetX = 0;
     if (Math.abs(state.accelOffsetY) < 0.001) state.accelOffsetY = 0;
-    if (Math.abs(state.accelSmoothX) < 0.001) state.accelSmoothX = 0;
-    if (Math.abs(state.accelSmoothY) < 0.001) state.accelSmoothY = 0;
   }
 
   function deviceOrientationToMatrix(alphaDeg, betaDeg, gammaDeg) {
@@ -1820,89 +1816,70 @@
     markSensorValid("orientation");
   }
 
-  function applyDeadzone(value, deadzone) {
-    const abs = Math.abs(value);
-    if (abs <= deadzone) return 0;
-    return Math.sign(value) * (abs - deadzone);
-  }
+  function mapAndroidLinearAccelerationToScreen(nx, ny) {
+    // v2.17: stable baseline from Android v5.26.
+    // App uses TYPE_LINEAR_ACCELERATION X/Y only. It maps normalized device
+    // axes to screen axes according to the locked interaction orientation.
+    const LANDSCAPE_X_SIGN = -1;
+    const LANDSCAPE_Y_SIGN = -1;
+    const PORTRAIT_ACCEL_X_SCALE = 1.0;
+    const PORTRAIT_ACCEL_Y_SCALE = 1.0;
+    const LANDSCAPE_ACCEL_X_SCALE = 1.0;
+    const LANDSCAPE_ACCEL_Y_SCALE = 1.0;
 
-  function mapDeviceAccelerationToScreen(ax, ay) {
     if (isLandscapeForPlay()) {
-      const dir = landscapeDirectionForRotation(state.playDisplayRotation || getDisplayRotationCode());
+      const landscapeDirection = landscapeDirectionForRotation(state.playDisplayRotation || getDisplayRotationCode());
       return {
-        x: dir * ay,
-        y: dir * ax
+        x: landscapeDirection * LANDSCAPE_X_SIGN * ny * LANDSCAPE_ACCEL_X_SCALE,
+        y: landscapeDirection * LANDSCAPE_Y_SIGN * nx * LANDSCAPE_ACCEL_Y_SCALE
       };
     }
 
     return {
-      x: ax,
-      y: -ay
+      x: nx * PORTRAIT_ACCEL_X_SCALE,
+      y: -ny * PORTRAIT_ACCEL_Y_SCALE
     };
-  }
-
-  function separateDominantAccelerationAxes(screenX, screenY) {
-    // v2.16: horizontal movement in landscape can easily turn into a figure-8
-    // when X/Y acceleration leak into each other. Keep the dominant movement
-    // axis and strongly attenuate the other axis, similar to the stable feeling
-    // of the Android app version.
-    const absX = Math.abs(screenX);
-    const absY = Math.abs(screenY);
-    const ratio = 1.18;
-
-    if (absX > absY * ratio) {
-      return { x: screenX, y: screenY * 0.18 };
-    }
-    if (absY > absX * ratio) {
-      return { x: screenX * 0.18, y: screenY };
-    }
-
-    // Ambiguous diagonal / hand rotation: reduce horizontal more aggressively,
-    // because the visible 8-shape was mainly on left-right motion.
-    return { x: screenX * 0.42, y: screenY * 0.72 };
   }
 
   function onMotion(e) {
     if (!state.sensorEnabled || !state.playing) return;
 
-    // v2.15+ uses DeviceMotion.acceleration as an acceleration nudge, not as
-    // an integrated position. v2.16 further separates axes to reduce left-right
-    // figure-8 drift while keeping up/down translation responsive.
+    // v2.17: port Android v5.26 PerformanceView.addLinearAcceleration().
+    // Keep this as a stable baseline: no axis hacks, no double integration,
+    // no web-specific "figure-8" compensation. Translation is a short nudge
+    // that decays back to center.
     const a = e.acceleration;
     if (!a) return;
 
     const ax = typeof a.x === "number" && Number.isFinite(a.x) ? a.x : 0;
     const ay = typeof a.y === "number" && Number.isFinite(a.y) ? a.y : 0;
-    if (!ax && !ay) return;
 
     const now = performance.now();
-    const dt = state.lastMotionAtMs ? clamp((now - state.lastMotionAtMs) / 1000, 0.008, 0.06) : 0.016;
+    const dt = state.lastMotionAtMs ? clamp((now - state.lastMotionAtMs) / 1000, 0.004, 0.060) : 0.016;
     state.lastMotionAtMs = now;
 
-    let screen = mapDeviceAccelerationToScreen(ax, ay);
-    if (isLandscapeForPlay()) {
-      screen = separateDominantAccelerationAxes(screen.x, screen.y);
+    const magnitude = Math.sqrt(ax * ax + ay * ay);
+    const ACCEL_THRESHOLD = 0.75;       // Android v5.26
+    const ACCEL_GAIN = 0.018;           // Android v5.26
+    const ACCEL_MAX_OFFSET = 0.26;      // Android v5.26
+
+    if (magnitude < ACCEL_THRESHOLD) {
+      decayAccelerationOffset(dt);
+      applyTargetWithAcceleration();
+      return;
     }
 
-    const DEADZONE = 0.09;             // m/s^2; removes hand tremor / sensor noise.
-    const SMOOTH_ALPHA_X = 0.16;       // slower horizontal smoothing reduces 8-shape wobble.
-    const SMOOTH_ALPHA_Y = 0.24;
-    const OFFSET_GAIN_X = 0.022;       // horizontal nudge is intentionally gentler.
-    const OFFSET_GAIN_Y = 0.030;
-    const MAX_OFFSET_X = 0.15;
-    const MAX_OFFSET_Y = 0.18;
+    const excess = magnitude - ACCEL_THRESHOLD;
+    const nx = ax / Math.max(0.001, magnitude);
+    const ny = ay / Math.max(0.001, magnitude);
+    const screen = mapAndroidLinearAccelerationToScreen(nx, ny);
 
-    const targetX = applyDeadzone(screen.x, DEADZONE);
-    const targetY = applyDeadzone(screen.y, DEADZONE);
+    state.accelOffsetX += screen.x * excess * ACCEL_GAIN;
+    state.accelOffsetY += screen.y * excess * ACCEL_GAIN;
+    state.accelOffsetX = clamp(state.accelOffsetX, -ACCEL_MAX_OFFSET, ACCEL_MAX_OFFSET);
+    state.accelOffsetY = clamp(state.accelOffsetY, -ACCEL_MAX_OFFSET, ACCEL_MAX_OFFSET);
 
-    state.accelSmoothX += (targetX - state.accelSmoothX) * SMOOTH_ALPHA_X;
-    state.accelSmoothY += (targetY - state.accelSmoothY) * SMOOTH_ALPHA_Y;
-
-    state.accelOffsetX = clamp(state.accelSmoothX * OFFSET_GAIN_X, -MAX_OFFSET_X, MAX_OFFSET_X);
-    state.accelOffsetY = clamp(state.accelSmoothY * OFFSET_GAIN_Y, -MAX_OFFSET_Y, MAX_OFFSET_Y);
-
-    // Settle the nudge smoothly back to center when movement stops.
-    decayAccelerationOffset(dt * 0.55);
+    decayAccelerationOffset(dt);
     applyTargetWithAcceleration();
     markSensorValid("motion");
   }
@@ -1914,8 +1891,6 @@
     state.fallbackEulerBaseline = null;
     state.accelOffsetX = 0;
     state.accelOffsetY = 0;
-    state.accelSmoothX = 0;
-    state.accelSmoothY = 0;
     state.lastMotionAtMs = 0;
     state.tiltBaseX = 0.5;
     state.tiltBaseY = 0.5;
