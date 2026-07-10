@@ -1445,120 +1445,142 @@ html, body, #app {
 }
 
 
-/* v2.14.7 Stable Test: compatibility dialog overflow fix */
-dialog {
+/* v2.14.8: compatibility dialog safe layout reset.
+   This intentionally avoids overflow:hidden/text clipping. Rows are stacked
+   vertically so Japanese/English strings cannot be eaten by the right edge. */
+#compatDialog {
+  padding: 0;
+}
+
+#compatDialog .compat-card {
+  width: min(560px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
-}
-
-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.38);
-}
-
-.compat-card {
-  width: min(560px, calc(100vw - 28px));
-  max-width: calc(100vw - 28px);
-  max-height: min(82vh, 720px);
+  max-height: min(86dvh, 720px);
   box-sizing: border-box;
-  overflow-x: hidden;
   overflow-y: auto;
+  overflow-x: visible;
   padding: 20px;
+  border-radius: 24px;
 }
 
-.compat-card h2,
-.compat-card .hint {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.compat-card .hint {
-  overflow-wrap: break-word;
-  word-break: normal;
-  line-break: strict;
-}
-
-.compat-list {
+#compatDialog h2,
+#compatDialog .hint,
+#compatDialog .compat-list,
+#compatDialog .version-label,
+#compatDialog .dialog-actions {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
-.compat-row {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+#compatDialog .compat-list {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) fit-content(4.5em);
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  overflow: hidden;
+  gap: 8px;
+  overflow: visible;
 }
 
-.compat-row > div {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.compat-row b,
-.compat-row small {
-  display: block;
+#compatDialog .compat-row {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-wrap: break-word;
-  word-break: normal;
-  line-break: strict;
-}
-
-.compat-row b {
-  white-space: normal;
-  line-height: 1.25;
-}
-
-.compat-row small {
-  white-space: normal;
-  line-height: 1.35;
-}
-
-.compat-row strong {
-  min-width: 3.1em;
-  max-width: 4.6em;
   box-sizing: border-box;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
+  display: block;
+  padding: 12px;
+  overflow: visible;
+  border-radius: 16px;
+}
+
+#compatDialog .compat-row > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+#compatDialog .compat-row b,
+#compatDialog .compat-row small {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow: visible;
   text-overflow: clip;
-  padding-left: 2px;
-  padding-right: 2px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-break: auto;
+}
+
+#compatDialog .compat-row b {
+  line-height: 1.28;
+  margin-bottom: 4px;
+}
+
+#compatDialog .compat-row small {
+  line-height: 1.38;
+}
+
+#compatDialog .compat-row strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+  border-radius: 999px;
+}
+
+#compatDialog .hint {
+  white-space: normal;
+  overflow: visible;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+#compatDialog .version-label {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.72;
+  white-space: normal;
+  overflow: visible;
 }
 
 @media (max-width: 420px) {
-  .compat-card {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
+  #compatDialog .compat-card {
+    width: calc(100vw - 18px);
+    max-width: calc(100vw - 18px);
+    max-height: 88dvh;
     padding: 16px;
     border-radius: 22px;
   }
 
-  .compat-row {
-    grid-template-columns: minmax(0, 1fr) minmax(3.0em, auto);
-    gap: 8px;
-    padding: 9px 10px;
+  #compatDialog .compat-row {
+    padding: 10px;
+    border-radius: 14px;
   }
 
-  .compat-row b {
+  #compatDialog .compat-row b {
     font-size: 13px;
   }
 
-  .compat-row small {
+  #compatDialog .compat-row small {
     font-size: 11px;
   }
 
-  .compat-row strong {
-    min-width: 3.0em;
-    max-width: 4.2em;
+  #compatDialog .compat-row strong {
     font-size: 12px;
+    padding: 3px 7px;
   }
 }

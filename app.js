@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.7";
+  const IROTO_WEB_VERSION = "2.14.8";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -261,7 +261,7 @@
     setText("#compatDialog .hint", t("compatHint"));
     const compatClose = document.querySelector("#compatDialog .primary-btn");
     if (compatClose) compatClose.textContent = t("close");
-    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION} Stable Test`;
+    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
 
     updateBpm(0);
     updateCompatDialog();
@@ -1959,7 +1959,7 @@
       ["PWA / Service Worker", "serviceWorker" in navigator, t("compatPwaNote")]
     ];
 
-    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION} Stable Test`;
+    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
     els.compatList.innerHTML = "";
     for (const [name, ok, note] of checks) {
       const row = document.createElement("div");
