@@ -1,76 +1,63 @@
-# Iroto Web v2.17
+# Iroto Web v2.18
 
-这是 Iroto Web v2.17：基于 Android App v5.26 的稳定手感基准版。
+这是 Iroto Web v2.18：回到 v2.14 手感基准版。
 
-## 1. 以 App v5.26 为基准，而不是继续凭感觉微调
+## 1. 回到 v2.14 的传感器手感
 
-v2.16 为了压制左右 8 字形轨迹，加入了横向特殊削弱和主轴分离。  
-这些处理虽然可能局部改善，但会让手感越来越偏离 App。
+v2.15～v2.17 尝试加入/移植加速度传感器后，两个传感器同时工作时会出现偶发抖动。  
+v2.18 以 v2.14 为基准，取消加速度对准星的影响。
 
-v2.17 已撤掉这些实验性处理，改成更接近 Android v5.26 的稳定基准逻辑。
-
-## 2. 加速度逻辑按 App v5.26 移植
-
-Android App v5.26 使用：
-
-```java
-Sensor.TYPE_LINEAR_ACCELERATION
-performanceView.addLinearAcceleration(event.values[0], event.values[1], event.timestamp);
-```
-
-核心逻辑：
+现在准星控制回到：
 
 ```text
-只使用 X/Y 线性加速度
-不使用 Z 轴
-不做加速度双重积分
-超过阈值后累加一个短暂 nudge
-nudge 按指数衰减回中心
+DeviceOrientation：使用
+DeviceMotion：不用于移动准星
+加速度 nudge：关闭
 ```
 
-移植参数：
+也就是说，平移时出现的轻微移动主要来自姿态传感器融合和手持时的微小旋转，而不是加速度控制。
+
+## 2. 手感相关调整全部回到 v2.14
+
+已撤回：
 
 ```text
-ACCEL_THRESHOLD = 0.75
-ACCEL_GAIN = 0.018
-ACCEL_DECAY_PER_SECOND = 6.0
-ACCEL_MAX_OFFSET = 0.26
+v2.15 加速度平移补偿
+v2.16 横向加速度稳定化
+v2.17 App 加速度 nudge 移植
+v2.17 固定 0.24 准星平滑
 ```
 
-## 3. 准星平滑也改回 App 版
+准星平滑回到 v2.14：
 
-Android v5.26：
-
-```java
-normX += (targetNormX - normX) * 0.24f;
-normY += (targetNormY - normY) * 0.24f;
+```text
+演奏中 smoothing = 0.16
+非演奏中 smoothing = 0.22
 ```
 
-Web v2.17 也改为固定 `0.24`。  
-这会比 v2.16 更接近 App 的响应速度。
+## 3. 保留非手感类小改动
 
-## 4. 版本号
+兼容性检查弹窗底部会显示当前版本：
+
+```text
+v2.18.0
+```
+
+## 4. 版本号更新
 
 资源路径更新为：
 
 ```text
-app.js?v=2.17.0
-styles.css?v=2.17.0
-manifest.webmanifest?v=2.17.0
-```
-
-兼容性检查弹窗底部显示：
-
-```text
-v2.17.0
+app.js?v=2.18.0
+styles.css?v=2.18.0
+manifest.webmanifest?v=2.18.0
 ```
 
 ## 5. 保持不变
 
 - v1.6 的矩阵相对旋转传感器逻辑保持
-- 自动全屏保持
-- 全屏横屏 safe-area 居中保持
-- 点击画面显示/隐藏 UI 保持
+- 自动全屏保持 v2.14
+- 点击画面显示/隐藏 UI 保持 v2.14
 - 拍照功能继续移除，只保留照片导入
 - 独立 1080p 录制画布保持
 - WebM 时长元数据修正保持
