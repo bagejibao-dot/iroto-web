@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.13.0";
+  const IROTO_WEB_VERSION = "2.14.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -983,6 +983,7 @@
   }
 
   function setPerformanceUiVisible(visible) {
+    state.controlsVisible = !!visible;
     const targets = [els.topbar, els.bottomBar];
     for (const el of targets) {
       if (!el) continue;
@@ -1022,6 +1023,29 @@
       state.transportHideTimer = setTimeout(() => {
         if (state.playing) setPerformanceUiVisible(false);
       }, ms);
+    }
+  }
+
+  function hideControlsImmediately() {
+    if (!state.image || !state.playing) return;
+    clearTimeout(state.transportHideTimer);
+    setPerformanceUiVisible(false);
+  }
+
+  function toggleControlsFromStageTap() {
+    if (!state.image) return;
+    if (!state.playing) {
+      showControlsTemporarily(1800);
+      return;
+    }
+
+    // v2.14: video-player style behavior.
+    // Tap once when UI is hidden -> show it temporarily.
+    // Tap again on the empty photo area when UI is visible -> hide it immediately.
+    if (state.controlsVisible) {
+      hideControlsImmediately();
+    } else {
+      showControlsTemporarily(1800);
     }
   }
 
@@ -2009,13 +2033,13 @@
 
     els.canvas.addEventListener("pointerdown", e => {
       e.preventDefault();
-      // Android v5.26 stage touch only reveals controls or opens image selection.
+      // Stage touch only controls UI visibility or opens image selection.
       // It never moves the crosshair.
       if (!state.image) {
         els.fileInput.click();
         return;
       }
-      if (state.playing) showControlsTemporarily(1800);
+      toggleControlsFromStageTap();
     });
 
     window.addEventListener("keydown", e => {
