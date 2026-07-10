@@ -1227,3 +1227,70 @@ html, body, #app {
     margin-top: 8px !important;
   }
 }
+
+
+/* v2.8 hard fix: hidden home screen must stay hidden in landscape performance mode */
+.empty-state.hidden {
+  display: none !important;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .empty-state.hidden {
+    display: none !important;
+  }
+}
+
+/* v2.8 prevent long photo names from colliding with the language selector */
+.topbar .title {
+  max-width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 240px) !important;
+}
+
+.file-name {
+  max-width: min(42vw, 360px) !important;
+}
+
+@media (max-width: 520px) {
+  .topbar .title {
+    max-width: calc(100vw - 210px) !important;
+  }
+
+  .file-name {
+    max-width: min(38vw, 260px) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .topbar .title {
+    max-width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 250px) !important;
+  }
+
+  .file-name {
+    max-width: min(36vw, 320px) !important;
+  }
+}
+
+
+/* v2.9 camera feature removed: single import action layout */
+.empty-actions {
+  gap: 10px;
+}
+
+.empty-actions .primary-btn {
+  min-width: 148px;
+}
+
+#cameraBtn,
+#photoSourceDialog,
+#cameraDialog {
+  display: none !important;
+}
+
+
+/* v2.10 single import workflow copy */
+.empty-actions {
+  justify-content: center !important;
+}
+
+.empty-actions .primary-btn {
+  min-width: 152px;
+}

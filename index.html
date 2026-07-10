@@ -8,8 +8,8 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Iroto Web</title>
-  <link rel="manifest" href="manifest.webmanifest?v=2.7.0" />
-  <link rel="stylesheet" href="styles.css?v=2.7.0" />
+  <link rel="manifest" href="manifest.webmanifest?v=2.10.0" />
+  <link rel="stylesheet" href="styles.css?v=2.10.0" />
 </head>
 <body>
   <div id="app">
@@ -32,10 +32,10 @@
       <section id="emptyState" class="empty-state">
         <div class="logo-dot">♪</div>
         <h1>Iroto Web</h1>
-        <p id="homeLead">写真を選択または撮影し、<br>傾けて演奏しましょう。</p>
+        <p id="homeLead">写真を選択し、<br>傾けて演奏しましょう。</p>
         <div class="empty-actions">
           <button id="choosePhotoBtn" class="primary-btn" type="button">写真を選択</button>
-          <button id="cameraBtn" class="secondary-btn" type="button">写真を撮影</button>
+          
         </div>
         <p id="homeHint" class="hint">Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。</p>
       </section>
@@ -59,20 +59,6 @@
     <div id="recordTimer" class="record-timer hidden" aria-live="polite">● 00:00</div>
 
     <input id="fileInput" type="file" accept="image/*" hidden />
-    <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden />
-
-
-    <dialog id="photoSourceDialog" class="dialog">
-      <form method="dialog" class="dialog-card photo-source-card">
-        <h2>写真の選択</h2>
-        <p>演奏用の写真を選択してください。</p>
-        <div class="dialog-actions">
-          <button id="sourceAlbumBtn" class="primary-btn" type="button">写真を選択</button>
-          <button id="sourceCameraBtn" class="secondary-btn" type="button">写真を撮影</button>
-          <button id="sourceCancelBtn" class="cancel-btn" type="button">キャンセル</button>
-        </div>
-      </form>
-    </dialog>
 
     <dialog id="saveDialog" class="dialog">
       <form method="dialog" class="dialog-card">
@@ -85,19 +71,6 @@
         <div class="dialog-actions">
           <button id="discardBtn" class="secondary-btn" value="discard" type="button">削除</button>
           <button id="saveBtn" class="primary-btn" value="save" type="button">保存</button>
-        </div>
-      </form>
-    </dialog>
-
-
-    <dialog id="cameraDialog" class="dialog">
-      <form method="dialog" class="dialog-card camera-card">
-        <h2>写真を撮影</h2>
-        <video id="cameraPreview" class="camera-preview" autoplay playsinline muted></video>
-        <p id="cameraStatus" class="camera-status">カメラを起動しています...</p>
-        <div class="dialog-actions">
-          <button id="closeCameraBtn" class="secondary-btn" type="button">キャンセル</button>
-          <button id="takePhotoBtn" class="primary-btn" type="button">撮影</button>
         </div>
       </form>
     </dialog>
@@ -116,6 +89,6 @@
     </dialog>
   </div>
 
-  <script src="app.js?v=2.7.0"></script>
+  <script src="app.js?v=2.10.0"></script>
 </body>
 </html>

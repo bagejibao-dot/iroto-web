@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.7.0";
+  const IROTO_WEB_VERSION = "2.10.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -12,7 +12,6 @@
     cameraBtn: document.getElementById("cameraBtn"),
     photoBtn: document.getElementById("photoBtn"),
     fileInput: document.getElementById("fileInput"),
-    cameraInput: document.getElementById("cameraInput"),
     fileName: document.getElementById("fileName"),
     bottomBar: document.getElementById("bottomBar"),
     playBtn: document.getElementById("playBtn"),
@@ -31,14 +30,6 @@
     helpBtn: document.getElementById("helpBtn"),
     compatDialog: document.getElementById("compatDialog"),
     compatList: document.getElementById("compatList"),
-    photoSourceDialog: document.getElementById("photoSourceDialog"),
-    sourceAlbumBtn: document.getElementById("sourceAlbumBtn"),
-    sourceCameraBtn: document.getElementById("sourceCameraBtn"),
-    sourceCancelBtn: document.getElementById("sourceCancelBtn"),
-    cameraDialog: document.getElementById("cameraDialog"),
-    cameraPreview: document.getElementById("cameraPreview"),
-    cameraStatus: document.getElementById("cameraStatus"),
-    takePhotoBtn: document.getElementById("takePhotoBtn"),
     closeCameraBtn: document.getElementById("closeCameraBtn")
   };
 
@@ -52,10 +43,10 @@
     ja: {
       htmlLang: "ja",
       fileNone: "写真未選択",
-      heroText: "写真を選択または撮影し、傾けて演奏しましょう。",
-      heroHtml: "写真を選択または撮影し、<br>傾けて演奏しましょう。",
-      hint: "Android は Chrome、iPhone は Safari 推奨。すべてのセンサー権限を許可してください。",
-      hintHtml: "Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。",
+      heroText: "写真を選択し、傾けて演奏しましょう。",
+      heroHtml: "写真を選択し、<br>傾けて演奏しましょう。",
+      hint: "保存済みの写真を選択してください。Android は Chrome、iPhone は Safari 推奨。すべてのセンサー権限を許可してください。",
+      hintHtml: "保存済みの写真を選択してください。<br>Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。",
       choosePhoto: "写真を選択",
       takePhotoFromHome: "写真を撮影",
       photoTitle: "写真を選択",
@@ -65,7 +56,7 @@
       play: "再生",
       stop: "停止",
       sourceTitle: "写真の選択",
-      sourceText: "演奏用の写真を選択してください。",
+      sourceText: "保存済みの写真を選択してください。",
       sourceAlbum: "写真を選択",
       sourceCamera: "写真を撮影",
       cancel: "キャンセル",
@@ -77,7 +68,7 @@
       fileName: "ファイル名",
       discard: "削除",
       save: "保存",
-      cameraTitle: "写真を撮影",
+      cameraTitle: "写真を選択",
       cameraOpening: "カメラを起動しています...",
       cameraOpened: "カメラが起動しました",
       cameraOpenFailed: "カメラを起動できません。ファイル選択に切り替えます。",
@@ -110,8 +101,8 @@
     zh: {
       htmlLang: "zh-CN",
       fileNone: "未选择照片",
-      heroText: "选择或拍摄照片，倾斜手机演奏。",
-      heroHtml: "选择或拍摄照片，<br>倾斜手机演奏。",
+      heroText: "选择照片，倾斜手机演奏。",
+      heroHtml: "选择照片，<br>倾斜手机演奏。",
       hint: "Android 建议 Chrome，iPhone 建议 Safari。请允许所有传感器权限。",
       hintHtml: "Android 建议 Chrome，iPhone 建议 Safari。<br>请允许所有传感器权限。",
       choosePhoto: "选择照片",
@@ -142,7 +133,7 @@
       cameraNotReady: "摄像头画面尚未准备好",
       photoCreateFailed: "照片生成失败",
       photoReadFailed: "照片读取失败。",
-      takePhoto: "拍照",
+      takePhoto: "选择照片",
       compatTitle: "兼容性状态",
       compatHint: "传感器功能通常需要 HTTPS。录制格式会根据浏览器自动选择 MP4 或 WebM。",
       close: "关闭",
@@ -168,8 +159,8 @@
     en: {
       htmlLang: "en",
       fileNone: "No photo selected",
-      heroText: "Select or take a photo, then tilt to perform.",
-      heroHtml: "Select or take a photo,<br>then tilt to perform.",
+      heroText: "Select a photo, then tilt to perform.",
+      heroHtml: "Select a photo,<br>then tilt to perform.",
       hint: "Chrome is recommended on Android, Safari on iPhone. Please allow all sensor permissions.",
       hintHtml: "Chrome is recommended on Android,<br>Safari on iPhone. Allow all sensor permissions.",
       choosePhoto: "Choose Photo",
@@ -193,7 +184,7 @@
       fileName: "File name",
       discard: "Delete",
       save: "Save",
-      cameraTitle: "Take Photo",
+      cameraTitle: "Choose Photo",
       cameraOpening: "Opening camera...",
       cameraOpened: "Camera is ready",
       cameraOpenFailed: "Could not open the camera. Switching to file picker.",
@@ -258,11 +249,8 @@
     els.playBtn.setAttribute("aria-label", state.playing ? t("stop") : t("play"));
     els.helpBtn.setAttribute("aria-label", t("compatTitle"));
 
-    setText("#photoSourceDialog h2", t("sourceTitle"));
-    setText("#photoSourceDialog p", t("sourceText"));
     els.sourceAlbumBtn.textContent = t("sourceAlbum");
     els.sourceCameraBtn.textContent = t("sourceCamera");
-    els.sourceCancelBtn.textContent = t("cancel");
 
     setText("#saveDialog h2", t("saveTitle"));
     if (els.saveDialog?.open && state.recordedBlob) updateRecordInfo();
@@ -271,13 +259,6 @@
     if (inputLabel && inputLabel.firstChild) inputLabel.firstChild.textContent = t("fileName") + "\n          ";
     els.discardBtn.textContent = t("discard");
     els.saveBtn.textContent = t("save");
-
-    setText("#cameraDialog h2", t("cameraTitle"));
-    if (!els.cameraStatus.textContent || ["正在打开摄像头...", "カメラを起動しています...", "Opening camera..."].includes(els.cameraStatus.textContent)) {
-      els.cameraStatus.textContent = t("cameraOpening");
-    }
-    els.closeCameraBtn.textContent = t("cancel");
-    els.takePhotoBtn.textContent = t("takePhoto");
 
     setText("#compatDialog h2", t("compatTitle"));
     setText("#compatDialog .hint", t("compatHint"));
@@ -1888,113 +1869,49 @@
   }
 
   function showPhotoSourceDialog() {
+    // v2.10: photo replacement opens the system file picker directly.
     if (state.playing) stopPlaying();
-    if (els.photoSourceDialog && typeof els.photoSourceDialog.showModal === "function") {
-      els.photoSourceDialog.showModal();
-    } else {
-      els.fileInput.click();
-    }
+    els.fileInput.click();
   }
 
-  function loadFile(file) {
+  function displayNameForLoadedFile(file, source = "file") {
+    if (source === "camera") {
+      if (state.currentLang === "ja") return "撮影写真";
+      if (state.currentLang === "zh") return "拍摄照片";
+      return "Camera Photo";
+    }
+
+    const raw = (file && file.name) ? file.name : "";
+    const clean = raw.replace(/\.[^.]+$/, "").trim();
+    const looksLikeCameraTemp =
+      !clean ||
+      /^image[_-]?\d+/i.test(clean) ||
+      /^img[_-]?\d+/i.test(clean) ||
+      /^pxl[_-]?\d+/i.test(clean) ||
+      /^photo[_-]?\d+/i.test(clean) ||
+      /^received[_-]?\d+/i.test(clean) ||
+      clean.length > 24;
+
+    if (looksLikeCameraTemp) {
+      if (state.currentLang === "ja") return "撮影写真";
+      if (state.currentLang === "zh") return "拍摄照片";
+      return "Camera Photo";
+    }
+
+    return raw.length > 28 ? `${raw.slice(0, 18)}…${raw.slice(-7)}` : raw;
+  }
+
+  function loadFile(file, source = "file") {
     if (!file) return;
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => enterImage(img, file.name || "Iroto", url);
+    const displayName = displayNameForLoadedFile(file, source);
+    img.onload = () => enterImage(img, displayName || "Iroto", url);
     img.onerror = () => {
       URL.revokeObjectURL(url);
       alert(t("photoReadFailed"));
     };
     img.src = url;
-  }
-
-  function loadBlobAsImage(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => enterImage(img, name || "Camera_Photo.jpg", url);
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      alert(t("photoReadFailed"));
-    };
-    img.src = url;
-  }
-
-  async function openCamera() {
-    // v2.7: On phones, use the system camera / file picker instead of the
-    // in-page camera dialog. The custom dialog can overflow in landscape,
-    // especially with safe-area / browser UI restrictions.
-    if (IS_MOBILE) {
-      els.cameraInput.click();
-      return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      els.cameraInput.click();
-      return;
-    }
-
-    try {
-      stopCameraStream();
-      els.cameraStatus.textContent = t("cameraOpening");
-      els.cameraPreview.srcObject = null;
-      els.cameraDialog.showModal();
-
-      const constraints = {
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: false
-      };
-      state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-      els.cameraPreview.srcObject = state.cameraStream;
-      await els.cameraPreview.play();
-      els.cameraStatus.textContent = t("cameraOpened");
-    } catch (err) {
-      console.warn(err);
-      stopCameraStream();
-      els.cameraStatus.textContent = t("cameraOpenFailed");
-      setTimeout(() => {
-        if (els.cameraDialog.open) els.cameraDialog.close();
-        els.cameraInput.click();
-      }, 700);
-    }
-  }
-
-  function stopCameraStream() {
-    if (state.cameraStream) {
-      for (const track of state.cameraStream.getTracks()) track.stop();
-      state.cameraStream = null;
-    }
-    if (els.cameraPreview) els.cameraPreview.srcObject = null;
-  }
-
-  function captureCameraPhoto() {
-    const video = els.cameraPreview;
-    const vw = video.videoWidth || 1280;
-    const vh = video.videoHeight || 720;
-    if (!vw || !vh) {
-      els.cameraStatus.textContent = t("cameraNotReady");
-      return;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = vw;
-    canvas.height = vh;
-    const c = canvas.getContext("2d");
-    c.drawImage(video, 0, 0, vw, vh);
-
-    canvas.toBlob(blob => {
-      if (!blob) {
-        els.cameraStatus.textContent = t("photoCreateFailed");
-        return;
-      }
-      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-      loadBlobAsImage(blob, `Iroto_${stamp}.jpg`);
-      stopCameraStream();
-      els.cameraDialog.close();
-    }, "image/jpeg", 0.95);
   }
 
   function startBpmRepeat(delta) {
@@ -2068,16 +1985,11 @@
     els.langSelect?.addEventListener("change", e => applyLanguage(e.target.value));
     els.choosePhotoBtn.addEventListener("click", () => els.fileInput.click());
     els.photoBtn.addEventListener("click", showPhotoSourceDialog);
-    els.cameraBtn.addEventListener("click", openCamera);
-    els.sourceAlbumBtn.addEventListener("click", () => { els.photoSourceDialog.close(); els.fileInput.click(); });
-    els.sourceCameraBtn.addEventListener("click", () => { els.photoSourceDialog.close(); openCamera(); });
-    els.sourceCancelBtn.addEventListener("click", () => els.photoSourceDialog.close());
 
-    els.fileInput.addEventListener("change", e => loadFile(e.target.files?.[0]));
-    els.cameraInput.addEventListener("change", e => loadFile(e.target.files?.[0]));
-    els.takePhotoBtn.addEventListener("click", captureCameraPhoto);
-    els.closeCameraBtn.addEventListener("click", () => { stopCameraStream(); els.cameraDialog.close(); });
-    els.cameraDialog.addEventListener("close", stopCameraStream);
+    els.fileInput.addEventListener("change", e => {
+      loadFile(e.target.files?.[0], "file");
+      e.target.value = "";
+    });
 
     els.playBtn.addEventListener("click", async () => {
       if (state.playing) stopPlaying();
