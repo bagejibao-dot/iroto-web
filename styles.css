@@ -1317,3 +1317,29 @@ html, body, #app {
 #stage {
   min-height: 100dvh;
 }
+
+
+/* v2.13 restore bottom browser/permission hint */
+#homeHint {
+  display: block !important;
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  max-width: none !important;
+  margin: 0 auto !important;
+  line-height: 1.45;
+  font-size: 12px;
+  text-wrap: balance;
+  opacity: 0.86;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  #homeHint {
+    left: calc(18px + env(safe-area-inset-left));
+    right: calc(18px + env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    font-size: 10.5px;
+    line-height: 1.25;
+  }
+}

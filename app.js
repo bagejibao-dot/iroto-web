@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.12.0";
+  const IROTO_WEB_VERSION = "2.13.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -45,8 +45,8 @@
       fileNone: "写真未選択",
       heroText: "写真を選択し、傾けて演奏しましょう。",
       heroHtml: "写真を選択し、<br>傾けて演奏しましょう。",
-      hint: "すべての権限を許可してください。",
-      hintHtml: "",
+      hint: "Android は Chrome、iPhone は Safari 推奨。すべての権限を許可してください。",
+      hintHtml: "Android は Chrome、iPhone は Safari 推奨。<br>すべての権限を許可してください。",
       choosePhoto: "写真を選択",
       takePhotoFromHome: "写真を選択",
       photoTitle: "写真を選択",
@@ -103,8 +103,8 @@
       fileNone: "未选择照片",
       heroText: "选择照片，倾斜手机演奏。",
       heroHtml: "选择照片，<br>倾斜手机演奏。",
-      hint: "请允许所有权限。",
-      hintHtml: "",
+      hint: "Android 建议 Chrome，iPhone 建议 Safari。请允许所有权限。",
+      hintHtml: "Android 建议 Chrome，iPhone 建议 Safari。<br>请允许所有权限。",
       choosePhoto: "选择照片",
       takePhotoFromHome: "选择照片",
       photoTitle: "选择照片",
@@ -161,8 +161,8 @@
       fileNone: "No photo selected",
       heroText: "Select a photo, then tilt to perform.",
       heroHtml: "Select a photo,<br>then tilt to perform.",
-      hint: "Allow all permissions.",
-      hintHtml: "",
+      hint: "Chrome is recommended on Android, Safari on iPhone. Allow all permissions.",
+      hintHtml: "Chrome on Android, Safari on iPhone.<br>Allow all permissions.",
       choosePhoto: "Choose Photo",
       takePhotoFromHome: "Choose Photo",
       photoTitle: "Choose Photo",
@@ -1052,11 +1052,18 @@
   }
 
   function beginImmersiveFromGesture() {
-    // v2.12: Do not request browser fullscreen automatically.
-    // Mobile browsers show a native "how to exit fullscreen" banner that
-    // cannot be hidden by web code. Keeping playback in the normal page avoids
-    // that banner while preserving the performance UI and sensor behavior.
-    return;
+    // v2.13: restore browser fullscreen for performance.
+    // In normal web page mode, mobile status/browser bars cannot be hidden by
+    // CSS. Fullscreen may show a native exit hint, but it gives the landscape
+    // performance screen enough usable space.
+    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+      try {
+        const p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch (err) {
+        // ignore; playback and UI still work
+      }
+    }
   }
 
   async function lockOrientationForPlay() {
@@ -1082,7 +1089,7 @@
       try { screen.orientation.unlock(); } catch (err) { console.warn(err); }
     }
     state.lockedOrientation = false;
-    // v2.12: playback no longer enters browser fullscreen automatically.
+    // v2.13: playback may enter browser fullscreen automatically.
   }
 
   function resetPerformanceState() {
