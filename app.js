@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.10.0";
+  const IROTO_WEB_VERSION = "2.11.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -45,10 +45,10 @@
       fileNone: "写真未選択",
       heroText: "写真を選択し、傾けて演奏しましょう。",
       heroHtml: "写真を選択し、<br>傾けて演奏しましょう。",
-      hint: "保存済みの写真を選択してください。Android は Chrome、iPhone は Safari 推奨。すべてのセンサー権限を許可してください。",
-      hintHtml: "保存済みの写真を選択してください。<br>Android は Chrome、iPhone は Safari 推奨。<br>すべてのセンサー権限を許可してください。",
+      hint: "すべての権限を許可してください。",
+      hintHtml: "",
       choosePhoto: "写真を選択",
-      takePhotoFromHome: "写真を撮影",
+      takePhotoFromHome: "写真を選択",
       photoTitle: "写真を選択",
       recordTitle: "録画",
       recordTimerLabel: "録画時間",
@@ -58,7 +58,7 @@
       sourceTitle: "写真の選択",
       sourceText: "保存済みの写真を選択してください。",
       sourceAlbum: "写真を選択",
-      sourceCamera: "写真を撮影",
+      sourceCamera: "写真を選択",
       cancel: "キャンセル",
       saveTitle: "演奏動画を保存",
       recordDone: "録画が完了しました。",
@@ -75,19 +75,19 @@
       cameraNotReady: "カメラ映像の準備ができていません",
       photoCreateFailed: "写真の生成に失敗しました",
       photoReadFailed: "写真の読み込みに失敗しました。",
-      takePhoto: "撮影",
+      takePhoto: "写真を選択",
       compatTitle: "互換性チェック",
-      compatHint: "センサー機能には通常 HTTPS が必要です。録画形式は自動選択されます。",
+      compatHint: "権限が求められた場合は、すべて許可してください。録画形式は自動選択されます。",
       close: "閉じる",
       sensorLabel: "センサー",
       compatStatusUnavailable: "不可",
       compatStatusDepends: "環境依存",
       compatSecure: "安全なコンテキスト / HTTPS",
-      compatSecureNote: "Android Chrome でセンサーを使うには通常 HTTPS が必要です",
+      compatSecureNote: "Android Chrome では一部機能に HTTPS が必要です",
       compatAudioNote: "音を合成するために使用します",
       compatOrientationNote: "傾き操作に使用します",
       compatMotionNote: "加速度 fallback に使用します",
-      compatIOS: "iOS センサー権限",
+      compatIOS: "iOS の権限",
       compatIOSNote: "iOS ではボタン操作による許可が必要です",
       compatCamera: "getUserMedia カメラ",
       compatCameraNote: "ブラウザで直接撮影するために使用します",
@@ -103,10 +103,10 @@
       fileNone: "未选择照片",
       heroText: "选择照片，倾斜手机演奏。",
       heroHtml: "选择照片，<br>倾斜手机演奏。",
-      hint: "Android 建议 Chrome，iPhone 建议 Safari。请允许所有传感器权限。",
-      hintHtml: "Android 建议 Chrome，iPhone 建议 Safari。<br>请允许所有传感器权限。",
+      hint: "请允许所有权限。",
+      hintHtml: "",
       choosePhoto: "选择照片",
-      takePhotoFromHome: "拍摄照片",
+      takePhotoFromHome: "选择照片",
       photoTitle: "选择照片",
       recordTitle: "录制",
       recordTimerLabel: "录制时间",
@@ -116,7 +116,7 @@
       sourceTitle: "照片来源",
       sourceText: "请选择新的演奏照片。",
       sourceAlbum: "选择照片",
-      sourceCamera: "拍摄照片",
+      sourceCamera: "选择照片",
       cancel: "取消",
       saveTitle: "保存演奏视频",
       recordDone: "录制完成。",
@@ -126,7 +126,7 @@
       fileName: "文件名",
       discard: "删除",
       save: "保存",
-      cameraTitle: "拍摄照片",
+      cameraTitle: "选择照片",
       cameraOpening: "正在打开摄像头...",
       cameraOpened: "摄像头已打开",
       cameraOpenFailed: "无法打开摄像头。将改用文件选择。",
@@ -135,17 +135,17 @@
       photoReadFailed: "照片读取失败。",
       takePhoto: "选择照片",
       compatTitle: "兼容性状态",
-      compatHint: "传感器功能通常需要 HTTPS。录制格式会根据浏览器自动选择 MP4 或 WebM。",
+      compatHint: "如出现权限请求，请允许所有权限。录制格式会自动选择。",
       close: "关闭",
       sensorLabel: "传感器",
       compatStatusUnavailable: "不可用",
       compatStatusDepends: "视平台而定",
       compatSecure: "安全上下文 / HTTPS",
-      compatSecureNote: "Android Chrome 传感器通常需要 HTTPS",
+      compatSecureNote: "Android Chrome 的部分功能通常需要 HTTPS",
       compatAudioNote: "用于合成声音",
       compatOrientationNote: "用于倾斜控制",
       compatMotionNote: "用于加速度 fallback",
-      compatIOS: "iOS 传感器权限",
+      compatIOS: "iOS 权限",
       compatIOSNote: "iOS 需点击按钮授权",
       compatCamera: "getUserMedia 摄像头",
       compatCameraNote: "用于浏览器直接拍照",
@@ -161,10 +161,10 @@
       fileNone: "No photo selected",
       heroText: "Select a photo, then tilt to perform.",
       heroHtml: "Select a photo,<br>then tilt to perform.",
-      hint: "Chrome is recommended on Android, Safari on iPhone. Please allow all sensor permissions.",
-      hintHtml: "Chrome is recommended on Android,<br>Safari on iPhone. Allow all sensor permissions.",
+      hint: "Allow all permissions.",
+      hintHtml: "",
       choosePhoto: "Choose Photo",
-      takePhotoFromHome: "Take Photo",
+      takePhotoFromHome: "Choose Photo",
       photoTitle: "Choose Photo",
       recordTitle: "Record",
       recordTimerLabel: "Recording time",
@@ -174,7 +174,7 @@
       sourceTitle: "Photo Source",
       sourceText: "Choose a new photo for performance.",
       sourceAlbum: "Choose Photo",
-      sourceCamera: "Take Photo",
+      sourceCamera: "Choose Photo",
       cancel: "Cancel",
       saveTitle: "Save Performance Video",
       recordDone: "Recording completed.",
@@ -191,19 +191,19 @@
       cameraNotReady: "Camera preview is not ready yet",
       photoCreateFailed: "Could not create photo",
       photoReadFailed: "Could not load the photo.",
-      takePhoto: "Capture",
+      takePhoto: "Choose Photo",
       compatTitle: "Compatibility Check",
-      compatHint: "Sensor features usually require HTTPS. Recording format is selected automatically as MP4 or WebM depending on the browser.",
+      compatHint: "When permissions are requested, allow all permissions. Recording format is selected automatically.",
       close: "Close",
       sensorLabel: "Sensor",
       compatStatusUnavailable: "Unavailable",
       compatStatusDepends: "Depends",
       compatSecure: "Secure Context / HTTPS",
-      compatSecureNote: "Android Chrome usually requires HTTPS for motion sensors",
+      compatSecureNote: "Android Chrome usually requires HTTPS for some features",
       compatAudioNote: "Used for sound synthesis",
       compatOrientationNote: "Used for tilt control",
       compatMotionNote: "Used as acceleration fallback",
-      compatIOS: "iOS Sensor Permission",
+      compatIOS: "iOS Permissions",
       compatIOSNote: "iOS requires permission from a button tap",
       compatCamera: "getUserMedia Camera",
       compatCameraNote: "Used to take photos directly in the browser",
@@ -240,7 +240,6 @@
     setHtml("#homeLead", t("heroHtml"));
     setHtml("#homeHint", t("hintHtml"));
     els.choosePhotoBtn.textContent = t("choosePhoto");
-    els.cameraBtn.textContent = t("takePhotoFromHome");
     els.photoBtn.title = t("photoTitle");
     els.recordBtn.title = t("recordTitle");
     if (els.recordTimer) els.recordTimer.title = t("recordTimerLabel");
@@ -248,9 +247,6 @@
     els.sensorStatus.textContent = t("sensorLabel");
     els.playBtn.setAttribute("aria-label", state.playing ? t("stop") : t("play"));
     els.helpBtn.setAttribute("aria-label", t("compatTitle"));
-
-    els.sourceAlbumBtn.textContent = t("sourceAlbum");
-    els.sourceCameraBtn.textContent = t("sourceCamera");
 
     setText("#saveDialog h2", t("saveTitle"));
     if (els.saveDialog?.open && state.recordedBlob) updateRecordInfo();
@@ -1874,38 +1870,16 @@
     els.fileInput.click();
   }
 
-  function displayNameForLoadedFile(file, source = "file") {
-    if (source === "camera") {
-      if (state.currentLang === "ja") return "撮影写真";
-      if (state.currentLang === "zh") return "拍摄照片";
-      return "Camera Photo";
-    }
-
+  function displayNameForLoadedFile(file) {
     const raw = (file && file.name) ? file.name : "";
-    const clean = raw.replace(/\.[^.]+$/, "").trim();
-    const looksLikeCameraTemp =
-      !clean ||
-      /^image[_-]?\d+/i.test(clean) ||
-      /^img[_-]?\d+/i.test(clean) ||
-      /^pxl[_-]?\d+/i.test(clean) ||
-      /^photo[_-]?\d+/i.test(clean) ||
-      /^received[_-]?\d+/i.test(clean) ||
-      clean.length > 24;
-
-    if (looksLikeCameraTemp) {
-      if (state.currentLang === "ja") return "撮影写真";
-      if (state.currentLang === "zh") return "拍摄照片";
-      return "Camera Photo";
-    }
-
-    return raw.length > 28 ? `${raw.slice(0, 18)}…${raw.slice(-7)}` : raw;
+    return raw.length > 28 ? `${raw.slice(0, 18)}…${raw.slice(-7)}` : (raw || "Iroto");
   }
 
   function loadFile(file, source = "file") {
     if (!file) return;
     const url = URL.createObjectURL(file);
     const img = new Image();
-    const displayName = displayNameForLoadedFile(file, source);
+    const displayName = displayNameForLoadedFile(file);
     img.onload = () => enterImage(img, displayName || "Iroto", url);
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -1951,7 +1925,6 @@
       ["DeviceOrientation", "DeviceOrientationEvent" in window, t("compatOrientationNote")],
       ["DeviceMotion", "DeviceMotionEvent" in window, t("compatMotionNote")],
       [t("compatIOS"), !(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") ? null : true, t("compatIOSNote")],
-      [t("compatCamera"), !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), t("compatCameraNote")],
       ["Canvas captureStream", !!els.canvas.captureStream, t("compatCaptureNote")],
       ["MediaRecorder", !!window.MediaRecorder, t("compatRecorderNote")],
       [t("compatMp4"), !!(window.MediaRecorder && MediaRecorder.isTypeSupported && (MediaRecorder.isTypeSupported("video/mp4") || MediaRecorder.isTypeSupported("video/mp4;codecs=avc1.42E01E,mp4a.40.2"))), t("compatMp4Note")],

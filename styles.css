@@ -1294,3 +1294,16 @@ html, body, #app {
 .empty-actions .primary-btn {
   min-width: 152px;
 }
+
+
+/* v2.11 no bottom homepage hint */
+#homeHint {
+  display: none !important;
+}
+
+/* v2.11 defensive cleanup for removed photo/camera source controls */
+#cameraBtn,
+#photoSourceDialog,
+#cameraDialog {
+  display: none !important;
+}
