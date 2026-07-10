@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.15";
+  const IROTO_WEB_VERSION = "2.14.1";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -82,14 +82,14 @@
       close: "閉じる",
       sensorLabel: "センサー",
       compatStatusUnavailable: "不可",
-      compatStatusDepends: "要確認",
-      compatSecure: "HTTPS / 安全な接続",
-      compatSecureNote: "Android Chrome では HTTPS が必要です",
+      compatStatusDepends: "環境依存",
+      compatSecure: "安全なコンテキスト / HTTPS",
+      compatSecureNote: "Android Chrome では一部機能に HTTPS が必要です",
       compatAudioNote: "音を合成するために使用します",
       compatOrientationNote: "傾き操作に使用します",
-      compatMotionNote: "加速度の補助判定に使用します",
-      compatIOS: "iOS 権限",
-      compatIOSNote: "iOS では許可操作が必要です",
+      compatMotionNote: "加速度 fallback に使用します",
+      compatIOS: "iOS の権限",
+      compatIOSNote: "iOS ではボタン操作による許可が必要です",
       compatCamera: "getUserMedia カメラ",
       compatCameraNote: "ブラウザで直接撮影するために使用します",
       compatCaptureNote: "画面録画に使用します",
@@ -162,8 +162,8 @@
       fileNone: "No photo selected",
       heroText: "Select a photo, then tilt to perform.",
       heroHtml: "Select a photo,<br>then tilt to perform.",
-      hint: "We recommend Chrome on Android and Safari on iPhone. Please allow all permissions.",
-      hintHtml: "We recommend Chrome on Android and Safari on iPhone.<br>Please allow all permissions.",
+      hint: "Chrome is recommended on Android, Safari on iPhone. Allow all permissions.",
+      hintHtml: "Chrome on Android, Safari on iPhone.<br>Allow all permissions.",
       choosePhoto: "Choose Photo",
       takePhotoFromHome: "Choose Photo",
       photoTitle: "Choose Photo",
