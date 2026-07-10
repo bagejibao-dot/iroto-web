@@ -1345,7 +1345,7 @@ html, body, #app {
 }
 
 
-/* v2.18 compatibility dialog version label */
+/* v2.14.1 compatibility dialog version label only */
 .version-label {
   margin: 10px 0 0;
   text-align: center;

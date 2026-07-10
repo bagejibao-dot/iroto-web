@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.18.0";
+  const IROTO_WEB_VERSION = "2.14.1";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -631,7 +631,6 @@
   }
 
   function updateCrosshair() {
-    // v2.18: keep v2.14 Web handfeel. Do not apply later acceleration-related tuning.
     const smoothing = state.playing ? 0.16 : 0.22;
     state.normX += (state.targetNormX - state.normX) * smoothing;
     state.normY += (state.targetNormY - state.normY) * smoothing;
@@ -1785,10 +1784,13 @@
   }
 
   function onMotion(e) {
-    // v2.18: return to v2.14 handfeel.
-    // DeviceMotion permission may be requested by the browser, but acceleration
-    // is not used to move the crosshair. The cursor is controlled by the
-    // stabilized DeviceOrientation path only.
+    // v0.9: Disable Web acceleration nudge by default.
+    //
+    // Android v5.26 uses TYPE_LINEAR_ACCELERATION, but Android Chrome's
+    // DeviceMotion acceleration values vary by device/browser and were causing
+    // conflict with DeviceOrientation, resulting in jumps and reversed nudge.
+    // Keep the crosshair controlled by the stabilized tilt path first. After
+    // tilt feels correct, acceleration can be tuned separately with device logs.
     return;
   }
 
@@ -1957,6 +1959,7 @@
       ["PWA / Service Worker", "serviceWorker" in navigator, t("compatPwaNote")]
     ];
 
+    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
     els.compatList.innerHTML = "";
     for (const [name, ok, note] of checks) {
       const row = document.createElement("div");
