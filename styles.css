@@ -1363,7 +1363,7 @@ html, body, #app {
 }
 
 
-/* v2.14.6 Stable Test: refined home logo */
+/* v2.14.6: refined home logo */
 .logo-ring {
   position: absolute;
   inset: 16px;
@@ -1582,5 +1582,271 @@ html, body, #app {
   #compatDialog .compat-row strong {
     font-size: 12px;
     padding: 3px 7px;
+  }
+}
+
+
+/* v2.15 homepage icon and compatibility dialog layout reset */
+
+/* Home icon: single SVG, no nested absolute spans. */
+.logo-dot {
+  width: 96px !important;
+  height: 96px !important;
+  display: block !important;
+  place-items: initial !important;
+  position: relative !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* Stable landscape home layout. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .empty-state:not(.hidden) {
+    display: grid !important;
+    grid-template-rows: auto auto auto auto;
+    align-content: center !important;
+    justify-items: center !important;
+    gap: 6px !important;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    padding-top: calc(62px + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(42px + env(safe-area-inset-bottom)) !important;
+    padding-left: calc(18px + env(safe-area-inset-left)) !important;
+    padding-right: calc(18px + env(safe-area-inset-right)) !important;
+    overflow-y: auto;
+  }
+
+  .logo-dot {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .empty-state h1 {
+    margin: 0 !important;
+    font-size: 20px !important;
+    line-height: 1.08 !important;
+  }
+
+  #homeLead {
+    max-width: min(72vw, 440px) !important;
+    line-height: 1.32 !important;
+    font-size: 14px !important;
+  }
+
+  .empty-actions {
+    margin-top: 0 !important;
+  }
+
+  #homeHint {
+    bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    left: calc(18px + env(safe-area-inset-left)) !important;
+    right: calc(18px + env(safe-area-inset-right)) !important;
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 380px) {
+  .logo-dot {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .empty-state h1 {
+    font-size: 18px !important;
+  }
+
+  #homeLead {
+    font-size: 12.5px !important;
+  }
+
+  .empty-actions .primary-btn {
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Compatibility dialog: safe, visible, no clipped text. */
+#compatDialog {
+  padding: 0;
+}
+
+#compatDialog .compat-card {
+  width: min(560px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: min(88dvh, 720px) !important;
+  box-sizing: border-box !important;
+  padding: 20px !important;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+  border-radius: 24px !important;
+}
+
+#compatDialog .compat-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+#compatDialog .compat-header h2 {
+  margin: 0;
+  min-width: 0;
+}
+
+#compatDialog .version-label {
+  display: block !important;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+#compatDialog .hint {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 12px;
+  white-space: normal;
+  overflow: visible;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}
+
+#compatDialog .compat-list {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  overflow: visible !important;
+}
+
+#compatDialog .compat-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px;
+  padding: 12px !important;
+  overflow: visible !important;
+  border-radius: 16px;
+}
+
+#compatDialog .compat-row > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: visible !important;
+}
+
+#compatDialog .compat-row b,
+#compatDialog .compat-row small {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
+
+#compatDialog .compat-row b {
+  line-height: 1.28;
+}
+
+#compatDialog .compat-row small {
+  line-height: 1.38;
+}
+
+#compatDialog .compat-row strong {
+  display: inline-flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0 !important;
+  padding: 3px 8px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  line-height: 1.2;
+  border-radius: 999px;
+}
+
+#compatDialog .dialog-actions {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 14px;
+}
+
+@media (max-width: 420px) {
+  #compatDialog .compat-card {
+    width: calc(100vw - 18px) !important;
+    max-width: calc(100vw - 18px) !important;
+    max-height: 88dvh !important;
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  #compatDialog .compat-header {
+    gap: 8px;
+  }
+
+  #compatDialog .compat-header h2 {
+    font-size: 18px;
+  }
+
+  #compatDialog .version-label {
+    font-size: 10.5px;
+  }
+
+  #compatDialog .compat-row {
+    padding: 10px !important;
+    border-radius: 14px;
+  }
+
+  #compatDialog .compat-row b {
+    font-size: 13px;
+  }
+
+  #compatDialog .compat-row small {
+    font-size: 11px;
+  }
+
+  #compatDialog .compat-row strong {
+    font-size: 12px;
+    padding: 3px 7px !important;
   }
 }

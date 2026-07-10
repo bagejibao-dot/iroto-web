@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.8";
+  const IROTO_WEB_VERSION = "2.15";
 
   const els = {
     canvas: document.getElementById("stage"),
