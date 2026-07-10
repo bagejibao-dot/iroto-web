@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.2";
+  const IROTO_WEB_VERSION = "2.14.3";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -343,8 +343,6 @@
     lastCanvasCssW: 0,
     lastCanvasCssH: 0,
     lockedOrientation: false,
-    keepFullscreenInPerformance: false,
-    fullscreenRetryTimer: null,
     playOrientationType: "portrait-primary"
   };
 
@@ -1080,55 +1078,18 @@
   }
 
   function beginImmersiveFromGesture() {
-    // v2.14.2: request fullscreen only when needed. The browser's native
-    // fullscreen hint cannot be hidden, but avoiding duplicate calls prevents
-    // unnecessary repeated hints when fullscreen is already active.
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-      try {
-        const p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
-        if (p && typeof p.catch === "function") p.catch(() => {});
-        return p || true;
-      } catch (err) {
-        // ignore; playback and UI still work
-      }
-    }
+    // v2.14.3: fullscreen disabled.
+    // Browser fullscreen hints were disruptive and keep-fullscreen retries could
+    // cause repeated enter/exit behavior on mobile browsers.
     return null;
-  }
-
-  function shouldKeepFullscreenInPerformance() {
-    return !!(state.keepFullscreenInPerformance && state.image && state.pageState === "performance");
-  }
-
-  function requestFullscreenIfPerformanceWantsIt() {
-    if (!shouldKeepFullscreenInPerformance()) return;
-    if (document.fullscreenElement) return;
-    beginImmersiveFromGesture();
-  }
-
-  function scheduleFullscreenKeepAlive() {
-    if (!shouldKeepFullscreenInPerformance()) return;
-    clearTimeout(state.fullscreenRetryTimer);
-    state.fullscreenRetryTimer = setTimeout(() => {
-      requestFullscreenIfPerformanceWantsIt();
-    }, 120);
   }
 
   async function lockOrientationForPlay() {
     state.playOrientationType = currentOrientationType();
     state.playDisplayRotation = getDisplayRotationCode();
     state.lockedOrientation = false;
-
-    beginImmersiveFromGesture();
-
-    if (!screen.orientation || !screen.orientation.lock) return;
-    const lockType = state.playOrientationType.startsWith("landscape") ? "landscape" : "portrait";
-    try {
-      await screen.orientation.lock(lockType);
-      state.lockedOrientation = true;
-    } catch (err) {
-      console.warn("Orientation lock failed", err);
-      state.lockedOrientation = false;
-    }
+    // v2.14.3: do not lock screen orientation because it often requires fullscreen.
+    return;
   }
 
   function unlockOrientationAfterPlay() {
@@ -1172,7 +1133,6 @@
   async function startPlaying() {
     if (!state.image) return;
 
-    state.keepFullscreenInPerformance = true;
     beginImmersiveFromGesture();
 
     // Web sensors require a user gesture. The play button is the closest
@@ -1539,12 +1499,9 @@
   }
 
   function showSaveDialog() {
-    state.keepFullscreenInPerformance = true;
-    requestFullscreenIfPerformanceWantsIt();
     setFilenameText(state.imageBaseName || "Iroto");
     updateRecordInfo();
     els.saveDialog.showModal();
-    scheduleFullscreenKeepAlive();
     setTimeout(() => {
       els.saveNameInput.focus({ preventScroll: true });
       selectFilenameText();
@@ -1574,7 +1531,6 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     els.saveDialog.close();
-    scheduleFullscreenKeepAlive();
   }
 
   function discardRecording() {
@@ -1582,7 +1538,6 @@
     state.recordedBlob = null;
     state.recordedChunks = [];
     els.saveDialog.close();
-    scheduleFullscreenKeepAlive();
   }
 
   function updateRecordButton() {
@@ -1856,9 +1811,6 @@
   function returnToHomeFromPerformance() {
     if (!state.image && state.pageState === "home") return;
 
-    state.keepFullscreenInPerformance = false;
-    clearTimeout(state.fullscreenRetryTimer);
-
     if (state.playing) stopPlaying();
     if (state.recording) stopRecording();
 
@@ -1917,22 +1869,15 @@
     setTransportButton(false);
     showTransportTemporarily(1800);
 
-    scheduleFullscreenKeepAlive();
-
     if (revokeUrl) {
       setTimeout(() => URL.revokeObjectURL(revokeUrl), 1000);
     }
   }
 
   function showPhotoSourceDialog() {
-    // v2.14.2: photo replacement opens the system file picker directly.
-    // Native file pickers may force-exit fullscreen on some browsers; request
-    // fullscreen before and retry after returning to the performance page.
-    state.keepFullscreenInPerformance = true;
-    requestFullscreenIfPerformanceWantsIt();
+    // v2.10: photo replacement opens the system file picker directly.
     if (state.playing) stopPlaying();
     els.fileInput.click();
-    scheduleFullscreenKeepAlive();
   }
 
   function displayNameForLoadedFile(file) {
@@ -2028,7 +1973,6 @@
     els.fileInput.addEventListener("change", e => {
       loadFile(e.target.files?.[0], "file");
       e.target.value = "";
-      scheduleFullscreenKeepAlive();
     });
 
     els.playBtn.addEventListener("click", async () => {
@@ -2080,7 +2024,6 @@
         els.fileInput.click();
         return;
       }
-      requestFullscreenIfPerformanceWantsIt();
       toggleControlsFromStageTap();
     });
 
@@ -2094,18 +2037,6 @@
     });
 
     window.addEventListener("blur", stopBpmRepeat);
-
-    document.addEventListener("fullscreenchange", () => {
-      if (!document.fullscreenElement && shouldKeepFullscreenInPerformance()) {
-        scheduleFullscreenKeepAlive();
-      }
-    });
-
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scheduleFullscreenKeepAlive();
-    });
-
-    window.addEventListener("focus", scheduleFullscreenKeepAlive);
 
     window.addEventListener("popstate", () => {
       if (state.image || state.pageState === "performance") {
