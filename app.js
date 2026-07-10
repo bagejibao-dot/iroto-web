@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.3";
+  const IROTO_WEB_VERSION = "2.14.4";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1078,18 +1078,32 @@
   }
 
   function beginImmersiveFromGesture() {
-    // v2.14.3: fullscreen disabled.
-    // Browser fullscreen hints were disruptive and keep-fullscreen retries could
-    // cause repeated enter/exit behavior on mobile browsers.
+    // v2.14.4: automatic fullscreen remains disabled.
+    // Fullscreen hints were disruptive, so playback stays in normal page mode.
     return null;
   }
 
   async function lockOrientationForPlay() {
+    // v2.14.4: restore rotation lock at playback start.
+    // Do not enter fullscreen, but still try to lock the current orientation.
+    // Some mobile browsers require fullscreen for screen.orientation.lock();
+    // in that case this fails silently and the performance still works.
     state.playOrientationType = currentOrientationType();
     state.playDisplayRotation = getDisplayRotationCode();
     state.lockedOrientation = false;
-    // v2.14.3: do not lock screen orientation because it often requires fullscreen.
-    return;
+
+    if (!screen.orientation || !screen.orientation.lock) return;
+
+    const type = state.playOrientationType;
+    const lockType = String(type).startsWith("landscape") ? "landscape" : "portrait";
+
+    try {
+      await screen.orientation.lock(lockType);
+      state.lockedOrientation = true;
+    } catch (err) {
+      // Browser may reject orientation lock outside fullscreen.
+      state.lockedOrientation = false;
+    }
   }
 
   function unlockOrientationAfterPlay() {
