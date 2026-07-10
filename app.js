@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.6.0";
+  const IROTO_WEB_VERSION = "2.7.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1920,9 +1920,15 @@
   }
 
   async function openCamera() {
+    // v2.7: On phones, use the system camera / file picker instead of the
+    // in-page camera dialog. The custom dialog can overflow in landscape,
+    // especially with safe-area / browser UI restrictions.
+    if (IS_MOBILE) {
+      els.cameraInput.click();
+      return;
+    }
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      // Desktop browsers often ignore capture=environment and open a file picker.
-      // Use this only as a fallback when real camera API is unavailable.
       els.cameraInput.click();
       return;
     }
