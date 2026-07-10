@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.0";
+  const IROTO_WEB_VERSION = "2.15.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -293,6 +293,8 @@
     hasSmoothValue: false,
     accelOffsetX: 0,
     accelOffsetY: 0,
+    accelSmoothX: 0,
+    accelSmoothY: 0,
     lastMotionAtMs: 0,
     pageState: "home",
     hasPushedPerformanceHistory: false,
@@ -409,6 +411,36 @@
     sampleCtx.drawImage(img, 0, 0, sw, sh);
   }
 
+  function cssEnvPx(name) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function getCanvasSafeAreaRect() {
+    const cw = els.canvas.width;
+    const ch = els.canvas.height;
+    const rect = els.canvas.getBoundingClientRect();
+    const scaleX = cw / Math.max(1, rect.width);
+    const scaleY = ch / Math.max(1, rect.height);
+
+    // v2.15: Only shift visual centering in fullscreen landscape.
+    // Non-fullscreen was already visually centered, so keep it unchanged.
+    const useSafeCenter = !!document.fullscreenElement && isLandscapeForPlay();
+    if (!useSafeCenter) return { x: 0, y: 0, w: cw, h: ch };
+
+    const left = cssEnvPx("--safe-left") * scaleX;
+    const right = cssEnvPx("--safe-right") * scaleX;
+    const top = cssEnvPx("--safe-top") * scaleY;
+    const bottom = cssEnvPx("--safe-bottom") * scaleY;
+
+    const x = Math.max(0, left);
+    const y = Math.max(0, top);
+    const w = Math.max(1, cw - left - right);
+    const h = Math.max(1, ch - top - bottom);
+    return { x, y, w, h };
+  }
+
   function computeImageRect() {
     const cw = els.canvas.width;
     const ch = els.canvas.height;
@@ -419,14 +451,15 @@
 
     const iw = state.image.naturalWidth || state.image.width;
     const ih = state.image.naturalHeight || state.image.height;
+    const safe = getCanvasSafeAreaRect();
 
     // v2.3: performance display keeps the original photo aspect ratio.
-    // Recording uses a separate photo-aspect canvas, so the on-screen image
-    // should not be stretched or cropped to full screen.
-    const scale = Math.min(cw / iw, ch / ih);
+    // v2.15: in fullscreen landscape, center inside the visual safe area so
+    // notch / cutout insets do not make the photo look off-center.
+    const scale = Math.min(safe.w / iw, safe.h / ih);
     const w = iw * scale;
     const h = ih * scale;
-    state.imageRect = { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
+    state.imageRect = { x: safe.x + (safe.w - w) / 2, y: safe.y + (safe.h - h) / 2, w, h };
   }
 
   function screenToNorm(clientX, clientY) {
@@ -1697,8 +1730,12 @@
     const decay = Math.exp(-ACCEL_DECAY_PER_SECOND * dt);
     state.accelOffsetX *= decay;
     state.accelOffsetY *= decay;
+    state.accelSmoothX *= decay;
+    state.accelSmoothY *= decay;
     if (Math.abs(state.accelOffsetX) < 0.001) state.accelOffsetX = 0;
     if (Math.abs(state.accelOffsetY) < 0.001) state.accelOffsetY = 0;
+    if (Math.abs(state.accelSmoothX) < 0.001) state.accelSmoothX = 0;
+    if (Math.abs(state.accelSmoothY) < 0.001) state.accelSmoothY = 0;
   }
 
   function deviceOrientationToMatrix(alphaDeg, betaDeg, gammaDeg) {
@@ -1781,15 +1818,67 @@
     markSensorValid("orientation");
   }
 
+  function applyDeadzone(value, deadzone) {
+    const abs = Math.abs(value);
+    if (abs <= deadzone) return 0;
+    return Math.sign(value) * (abs - deadzone);
+  }
+
+  function mapDeviceAccelerationToScreen(ax, ay) {
+    if (isLandscapeForPlay()) {
+      const dir = landscapeDirectionForRotation(state.playDisplayRotation || getDisplayRotationCode());
+      return {
+        x: dir * ay,
+        y: dir * ax
+      };
+    }
+
+    return {
+      x: ax,
+      y: -ay
+    };
+  }
+
   function onMotion(e) {
-    // v0.9: Disable Web acceleration nudge by default.
-    //
-    // Android v5.26 uses TYPE_LINEAR_ACCELERATION, but Android Chrome's
-    // DeviceMotion acceleration values vary by device/browser and were causing
-    // conflict with DeviceOrientation, resulting in jumps and reversed nudge.
-    // Keep the crosshair controlled by the stabilized tilt path first. After
-    // tilt feels correct, acceleration can be tuned separately with device logs.
-    return;
+    if (!state.sensorEnabled || !state.playing) return;
+
+    // v2.15: bring back acceleration nudge, closer to the Android app's
+    // TYPE_LINEAR_ACCELERATION feel. Use DeviceMotion.acceleration only,
+    // because accelerationIncludingGravity mixes in tilt/gravity and easily
+    // conflicts with DeviceOrientation.
+    const a = e.acceleration;
+    if (!a) return;
+
+    const ax = typeof a.x === "number" && Number.isFinite(a.x) ? a.x : 0;
+    const ay = typeof a.y === "number" && Number.isFinite(a.y) ? a.y : 0;
+    if (!ax && !ay) return;
+
+    const now = performance.now();
+    const dt = state.lastMotionAtMs ? clamp((now - state.lastMotionAtMs) / 1000, 0.008, 0.06) : 0.016;
+    state.lastMotionAtMs = now;
+
+    const screen = mapDeviceAccelerationToScreen(ax, ay);
+    const DEADZONE = 0.08;        // m/s^2; removes hand tremor / sensor noise.
+    const SMOOTH_ALPHA = 0.24;    // low-pass for steadier translation feel.
+    const OFFSET_GAIN = 0.030;    // normalized offset per m/s^2.
+    const MAX_OFFSET = 0.18;      // keep acceleration as a nudge, not a drift.
+
+    const targetX = applyDeadzone(screen.x, DEADZONE);
+    const targetY = applyDeadzone(screen.y, DEADZONE);
+
+    state.accelSmoothX += (targetX - state.accelSmoothX) * SMOOTH_ALPHA;
+    state.accelSmoothY += (targetY - state.accelSmoothY) * SMOOTH_ALPHA;
+
+    // Direct acceleration-to-offset mapping is intentionally used instead of
+    // double integration. It preserves the app-like translation response while
+    // avoiding Web DeviceMotion drift and figure-8 looping.
+    state.accelOffsetX = clamp(state.accelSmoothX * OFFSET_GAIN, -MAX_OFFSET, MAX_OFFSET);
+    state.accelOffsetY = clamp(state.accelSmoothY * OFFSET_GAIN, -MAX_OFFSET, MAX_OFFSET);
+
+    // When the phone becomes still, settle the nudge smoothly back to center.
+    decayAccelerationOffset(dt * 0.6);
+    applyTargetWithAcceleration();
+    markSensorValid("motion");
   }
 
   function recenter() {
@@ -1799,6 +1888,8 @@
     state.fallbackEulerBaseline = null;
     state.accelOffsetX = 0;
     state.accelOffsetY = 0;
+    state.accelSmoothX = 0;
+    state.accelSmoothY = 0;
     state.lastMotionAtMs = 0;
     state.tiltBaseX = 0.5;
     state.tiltBaseY = 0.5;
