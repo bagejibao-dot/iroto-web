@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.17.1";
+  const IROTO_WEB_VERSION = "2.14.1";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -411,36 +411,6 @@
     sampleCtx.drawImage(img, 0, 0, sw, sh);
   }
 
-  function cssEnvPx(name) {
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    const n = parseFloat(value);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function getCanvasSafeAreaRect() {
-    const cw = els.canvas.width;
-    const ch = els.canvas.height;
-    const rect = els.canvas.getBoundingClientRect();
-    const scaleX = cw / Math.max(1, rect.width);
-    const scaleY = ch / Math.max(1, rect.height);
-
-    // v2.15: Only shift visual centering in fullscreen landscape.
-    // Non-fullscreen was already visually centered, so keep it unchanged.
-    const useSafeCenter = !!document.fullscreenElement && isLandscapeForPlay();
-    if (!useSafeCenter) return { x: 0, y: 0, w: cw, h: ch };
-
-    const left = cssEnvPx("--safe-left") * scaleX;
-    const right = cssEnvPx("--safe-right") * scaleX;
-    const top = cssEnvPx("--safe-top") * scaleY;
-    const bottom = cssEnvPx("--safe-bottom") * scaleY;
-
-    const x = Math.max(0, left);
-    const y = Math.max(0, top);
-    const w = Math.max(1, cw - left - right);
-    const h = Math.max(1, ch - top - bottom);
-    return { x, y, w, h };
-  }
-
   function computeImageRect() {
     const cw = els.canvas.width;
     const ch = els.canvas.height;
@@ -451,15 +421,14 @@
 
     const iw = state.image.naturalWidth || state.image.width;
     const ih = state.image.naturalHeight || state.image.height;
-    const safe = getCanvasSafeAreaRect();
 
     // v2.3: performance display keeps the original photo aspect ratio.
-    // v2.15: in fullscreen landscape, center inside the visual safe area so
-    // notch / cutout insets do not make the photo look off-center.
-    const scale = Math.min(safe.w / iw, safe.h / ih);
+    // Recording uses a separate photo-aspect canvas, so the on-screen image
+    // should not be stretched or cropped to full screen.
+    const scale = Math.min(cw / iw, ch / ih);
     const w = iw * scale;
     const h = ih * scale;
-    state.imageRect = { x: safe.x + (safe.w - w) / 2, y: safe.y + (safe.h - h) / 2, w, h };
+    state.imageRect = { x: (cw - w) / 2, y: (ch - h) / 2, w, h };
   }
 
   function screenToNorm(clientX, clientY) {
@@ -662,8 +631,6 @@
   }
 
   function updateCrosshair() {
-    // v2.17.1: keep the v2.17 acceleration path, but restore the Web handfeel
-    // for cursor smoothing instead of the Android fixed 0.24 value.
     const smoothing = state.playing ? 0.16 : 0.22;
     state.normX += (state.targetNormX - state.normX) * smoothing;
     state.normY += (state.targetNormY - state.normY) * smoothing;
@@ -1728,7 +1695,6 @@
   }
 
   function decayAccelerationOffset(dt) {
-    // v2.17: Android v5.26 ACCEL_DECAY_PER_SECOND = 6.0f.
     const ACCEL_DECAY_PER_SECOND = 6.0;
     const decay = Math.exp(-ACCEL_DECAY_PER_SECOND * dt);
     state.accelOffsetX *= decay;
@@ -1817,72 +1783,15 @@
     markSensorValid("orientation");
   }
 
-  function mapAndroidLinearAccelerationToScreen(nx, ny) {
-    // v2.17: stable baseline from Android v5.26.
-    // App uses TYPE_LINEAR_ACCELERATION X/Y only. It maps normalized device
-    // axes to screen axes according to the locked interaction orientation.
-    const LANDSCAPE_X_SIGN = -1;
-    const LANDSCAPE_Y_SIGN = -1;
-    const PORTRAIT_ACCEL_X_SCALE = 1.0;
-    const PORTRAIT_ACCEL_Y_SCALE = 1.0;
-    const LANDSCAPE_ACCEL_X_SCALE = 1.0;
-    const LANDSCAPE_ACCEL_Y_SCALE = 1.0;
-
-    if (isLandscapeForPlay()) {
-      const landscapeDirection = landscapeDirectionForRotation(state.playDisplayRotation || getDisplayRotationCode());
-      return {
-        x: landscapeDirection * LANDSCAPE_X_SIGN * ny * LANDSCAPE_ACCEL_X_SCALE,
-        y: landscapeDirection * LANDSCAPE_Y_SIGN * nx * LANDSCAPE_ACCEL_Y_SCALE
-      };
-    }
-
-    return {
-      x: nx * PORTRAIT_ACCEL_X_SCALE,
-      y: -ny * PORTRAIT_ACCEL_Y_SCALE
-    };
-  }
-
   function onMotion(e) {
-    if (!state.sensorEnabled || !state.playing) return;
-
-    // v2.17: port Android v5.26 PerformanceView.addLinearAcceleration().
-    // Keep this as a stable baseline: no axis hacks, no double integration,
-    // no web-specific "figure-8" compensation. Translation is a short nudge
-    // that decays back to center.
-    const a = e.acceleration;
-    if (!a) return;
-
-    const ax = typeof a.x === "number" && Number.isFinite(a.x) ? a.x : 0;
-    const ay = typeof a.y === "number" && Number.isFinite(a.y) ? a.y : 0;
-
-    const now = performance.now();
-    const dt = state.lastMotionAtMs ? clamp((now - state.lastMotionAtMs) / 1000, 0.004, 0.060) : 0.016;
-    state.lastMotionAtMs = now;
-
-    const magnitude = Math.sqrt(ax * ax + ay * ay);
-    const ACCEL_THRESHOLD = 0.75;       // Android v5.26
-    const ACCEL_GAIN = 0.018;           // Android v5.26
-    const ACCEL_MAX_OFFSET = 0.26;      // Android v5.26
-
-    if (magnitude < ACCEL_THRESHOLD) {
-      decayAccelerationOffset(dt);
-      applyTargetWithAcceleration();
-      return;
-    }
-
-    const excess = magnitude - ACCEL_THRESHOLD;
-    const nx = ax / Math.max(0.001, magnitude);
-    const ny = ay / Math.max(0.001, magnitude);
-    const screen = mapAndroidLinearAccelerationToScreen(nx, ny);
-
-    state.accelOffsetX += screen.x * excess * ACCEL_GAIN;
-    state.accelOffsetY += screen.y * excess * ACCEL_GAIN;
-    state.accelOffsetX = clamp(state.accelOffsetX, -ACCEL_MAX_OFFSET, ACCEL_MAX_OFFSET);
-    state.accelOffsetY = clamp(state.accelOffsetY, -ACCEL_MAX_OFFSET, ACCEL_MAX_OFFSET);
-
-    decayAccelerationOffset(dt);
-    applyTargetWithAcceleration();
-    markSensorValid("motion");
+    // v0.9: Disable Web acceleration nudge by default.
+    //
+    // Android v5.26 uses TYPE_LINEAR_ACCELERATION, but Android Chrome's
+    // DeviceMotion acceleration values vary by device/browser and were causing
+    // conflict with DeviceOrientation, resulting in jumps and reversed nudge.
+    // Keep the crosshair controlled by the stabilized tilt path first. After
+    // tilt feels correct, acceleration can be tuned separately with device logs.
+    return;
   }
 
   function recenter() {
@@ -2050,6 +1959,7 @@
       ["PWA / Service Worker", "serviceWorker" in navigator, t("compatPwaNote")]
     ];
 
+    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
     els.compatList.innerHTML = "";
     for (const [name, ok, note] of checks) {
       const row = document.createElement("div");

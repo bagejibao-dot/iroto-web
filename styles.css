@@ -1,8 +1,4 @@
 :root {
-  --safe-left: env(safe-area-inset-left);
-  --safe-right: env(safe-area-inset-right);
-  --safe-top: env(safe-area-inset-top);
-  --safe-bottom: env(safe-area-inset-bottom);
   color-scheme: dark;
   --bg: #05070b;
   --panel: rgba(12, 16, 24, 0.72);
@@ -1349,7 +1345,7 @@ html, body, #app {
 }
 
 
-/* v2.16 compatibility dialog version label */
+/* v2.14.1 compatibility dialog version label only */
 .version-label {
   margin: 10px 0 0;
   text-align: center;
