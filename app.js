@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.15.0";
+  const IROTO_WEB_VERSION = "2.16.0";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -30,6 +30,7 @@
     helpBtn: document.getElementById("helpBtn"),
     compatDialog: document.getElementById("compatDialog"),
     compatList: document.getElementById("compatList"),
+    compatVersion: document.getElementById("compatVersion"),
     closeCameraBtn: document.getElementById("closeCameraBtn")
   };
 
@@ -260,6 +261,7 @@
     setText("#compatDialog .hint", t("compatHint"));
     const compatClose = document.querySelector("#compatDialog .primary-btn");
     if (compatClose) compatClose.textContent = t("close");
+    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
 
     updateBpm(0);
     updateCompatDialog();
@@ -1839,13 +1841,33 @@
     };
   }
 
+  function separateDominantAccelerationAxes(screenX, screenY) {
+    // v2.16: horizontal movement in landscape can easily turn into a figure-8
+    // when X/Y acceleration leak into each other. Keep the dominant movement
+    // axis and strongly attenuate the other axis, similar to the stable feeling
+    // of the Android app version.
+    const absX = Math.abs(screenX);
+    const absY = Math.abs(screenY);
+    const ratio = 1.18;
+
+    if (absX > absY * ratio) {
+      return { x: screenX, y: screenY * 0.18 };
+    }
+    if (absY > absX * ratio) {
+      return { x: screenX * 0.18, y: screenY };
+    }
+
+    // Ambiguous diagonal / hand rotation: reduce horizontal more aggressively,
+    // because the visible 8-shape was mainly on left-right motion.
+    return { x: screenX * 0.42, y: screenY * 0.72 };
+  }
+
   function onMotion(e) {
     if (!state.sensorEnabled || !state.playing) return;
 
-    // v2.15: bring back acceleration nudge, closer to the Android app's
-    // TYPE_LINEAR_ACCELERATION feel. Use DeviceMotion.acceleration only,
-    // because accelerationIncludingGravity mixes in tilt/gravity and easily
-    // conflicts with DeviceOrientation.
+    // v2.15+ uses DeviceMotion.acceleration as an acceleration nudge, not as
+    // an integrated position. v2.16 further separates axes to reduce left-right
+    // figure-8 drift while keeping up/down translation responsive.
     const a = e.acceleration;
     if (!a) return;
 
@@ -1857,26 +1879,30 @@
     const dt = state.lastMotionAtMs ? clamp((now - state.lastMotionAtMs) / 1000, 0.008, 0.06) : 0.016;
     state.lastMotionAtMs = now;
 
-    const screen = mapDeviceAccelerationToScreen(ax, ay);
-    const DEADZONE = 0.08;        // m/s^2; removes hand tremor / sensor noise.
-    const SMOOTH_ALPHA = 0.24;    // low-pass for steadier translation feel.
-    const OFFSET_GAIN = 0.030;    // normalized offset per m/s^2.
-    const MAX_OFFSET = 0.18;      // keep acceleration as a nudge, not a drift.
+    let screen = mapDeviceAccelerationToScreen(ax, ay);
+    if (isLandscapeForPlay()) {
+      screen = separateDominantAccelerationAxes(screen.x, screen.y);
+    }
+
+    const DEADZONE = 0.09;             // m/s^2; removes hand tremor / sensor noise.
+    const SMOOTH_ALPHA_X = 0.16;       // slower horizontal smoothing reduces 8-shape wobble.
+    const SMOOTH_ALPHA_Y = 0.24;
+    const OFFSET_GAIN_X = 0.022;       // horizontal nudge is intentionally gentler.
+    const OFFSET_GAIN_Y = 0.030;
+    const MAX_OFFSET_X = 0.15;
+    const MAX_OFFSET_Y = 0.18;
 
     const targetX = applyDeadzone(screen.x, DEADZONE);
     const targetY = applyDeadzone(screen.y, DEADZONE);
 
-    state.accelSmoothX += (targetX - state.accelSmoothX) * SMOOTH_ALPHA;
-    state.accelSmoothY += (targetY - state.accelSmoothY) * SMOOTH_ALPHA;
+    state.accelSmoothX += (targetX - state.accelSmoothX) * SMOOTH_ALPHA_X;
+    state.accelSmoothY += (targetY - state.accelSmoothY) * SMOOTH_ALPHA_Y;
 
-    // Direct acceleration-to-offset mapping is intentionally used instead of
-    // double integration. It preserves the app-like translation response while
-    // avoiding Web DeviceMotion drift and figure-8 looping.
-    state.accelOffsetX = clamp(state.accelSmoothX * OFFSET_GAIN, -MAX_OFFSET, MAX_OFFSET);
-    state.accelOffsetY = clamp(state.accelSmoothY * OFFSET_GAIN, -MAX_OFFSET, MAX_OFFSET);
+    state.accelOffsetX = clamp(state.accelSmoothX * OFFSET_GAIN_X, -MAX_OFFSET_X, MAX_OFFSET_X);
+    state.accelOffsetY = clamp(state.accelSmoothY * OFFSET_GAIN_Y, -MAX_OFFSET_Y, MAX_OFFSET_Y);
 
-    // When the phone becomes still, settle the nudge smoothly back to center.
-    decayAccelerationOffset(dt * 0.6);
+    // Settle the nudge smoothly back to center when movement stops.
+    decayAccelerationOffset(dt * 0.55);
     applyTargetWithAcceleration();
     markSensorValid("motion");
   }

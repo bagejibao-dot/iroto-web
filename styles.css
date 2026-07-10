@@ -1347,3 +1347,13 @@ html, body, #app {
     line-height: 1.25;
   }
 }
+
+
+/* v2.16 compatibility dialog version label */
+.version-label {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.72;
+}
