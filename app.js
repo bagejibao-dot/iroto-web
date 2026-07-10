@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.6";
+  const IROTO_WEB_VERSION = "2.14.7";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -83,8 +83,8 @@
       sensorLabel: "センサー",
       compatStatusUnavailable: "不可",
       compatStatusDepends: "要確認",
-      compatSecure: "安全なコンテキスト / HTTPS",
-      compatSecureNote: "Android Chrome では一部機能に HTTPS が必要です",
+      compatSecure: "HTTPS / 安全な接続",
+      compatSecureNote: "Android Chrome では HTTPS が必要です",
       compatAudioNote: "音を合成するために使用します",
       compatOrientationNote: "傾き操作に使用します",
       compatMotionNote: "加速度の補助判定に使用します",
