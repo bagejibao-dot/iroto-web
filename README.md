@@ -1,65 +1,121 @@
-# Iroto Web v2.14
+# Iroto Web v2.17
 
-这是 Iroto Web v2.14：演奏界面点击画面切换 UI 显示/隐藏版。
+这是 Iroto Web v2.17：基于 Android App v5.26 的稳定手感基准版。
 
-## 1. 演奏中点击画面的逻辑调整
+## 1. 以 App v5.26 为基准，而不是继续凭感觉微调
 
-之前的逻辑是：
+v2.16 为了压制左右 8 字形轨迹，加入了横向特殊削弱和主轴分离。  
+这些处理虽然可能局部改善，但会让手感越来越偏离 App。
 
-```text
-点击照片区域 → 显示 UI → 等几秒自动隐藏
+v2.17 已撤掉这些实验性处理，改成更接近 Android v5.26 的稳定基准逻辑。
+
+## 2. 加速度逻辑按 App v5.26 移植
+
+Android App v5.26 使用：
+
+```java
+Sensor.TYPE_LINEAR_ACCELERATION
+performanceView.addLinearAcceleration(event.values[0], event.values[1], event.timestamp);
 ```
 
-v2.14 改成更接近一般视频 App 的逻辑：
+核心逻辑：
 
 ```text
-UI 隐藏时点击照片区域 → 显示 UI，并几秒后自动隐藏
-UI 显示时再次点击照片空白处 → 立即隐藏 UI
+只使用 X/Y 线性加速度
+不使用 Z 轴
+不做加速度双重积分
+超过阈值后累加一个短暂 nudge
+nudge 按指数衰减回中心
 ```
 
-这样不需要等待自动隐藏。
+移植参数：
 
-## 2. 不影响按钮操作
+```text
+ACCEL_THRESHOLD = 0.75
+ACCEL_GAIN = 0.018
+ACCEL_DECAY_PER_SECOND = 6.0
+ACCEL_MAX_OFFSET = 0.26
+```
 
-点击顶部/底部 UI 按钮不会触发这个画面点击逻辑。  
-这个逻辑只作用于照片 / canvas 区域。
+## 3. 准星平滑也改回 App 版
 
-## 3. 版本号更新
+Android v5.26：
+
+```java
+normX += (targetNormX - normX) * 0.24f;
+normY += (targetNormY - normY) * 0.24f;
+```
+
+Web v2.17 也改为固定 `0.24`。  
+这会比 v2.16 更接近 App 的响应速度。
+
+## 4. 版本号
 
 资源路径更新为：
 
 ```text
-app.js?v=2.14.0
-styles.css?v=2.14.0
-manifest.webmanifest?v=2.14.0
+app.js?v=2.17.0
+styles.css?v=2.17.0
+manifest.webmanifest?v=2.17.0
 ```
 
-## 4. 保持不变
+兼容性检查弹窗底部显示：
 
-- v1.6 的矩阵相对旋转传感器逻辑保持不变
-- 自动全屏保持 v2.13
-- 底部浏览器推荐和权限提示保持 v2.13
+```text
+v2.17.0
+```
+
+## 5. 保持不变
+
+- v1.6 的矩阵相对旋转传感器逻辑保持
+- 自动全屏保持
+- 全屏横屏 safe-area 居中保持
+- 点击画面显示/隐藏 UI 保持
 - 拍照功能继续移除，只保留照片导入
 - 独立 1080p 录制画布保持
 - WebM 时长元数据修正保持
 
 ---
 
-# v2.14.1 追加内容
+# v2.17.1 追加内容
 
-这是基于用户重新上传的 v2.14 文件制作的最小修改版。  
-没有修改传感器、准星平滑、全屏、点击画面隐藏 UI、录制等手感相关逻辑。
+这是基于用户重新上传的 v2.17 文件制作的手感微调版。
 
-只追加：
+## 1. 保留 v2.17 的加速度逻辑
+
+仍然保留 v2.17 基于 Android App v5.26 的加速度 nudge 逻辑：
 
 ```text
-兼容性检查弹窗底部显示当前版本号：v2.14.1
+TYPE_LINEAR_ACCELERATION 风格
+只使用 X/Y
+超过阈值后短暂推动准星
+指数衰减回中心
 ```
+
+## 2. 准星平滑值改回 Web 版
+
+v2.17 使用了 App 版固定 0.24 的准星平滑。  
+v2.17.1 改回 Web 版手感：
+
+```text
+演奏中 smoothing = 0.16
+非演奏中 smoothing = 0.22
+```
+
+这样可以先测试“两传感器加入，但准星手感保持 Web 版”的效果。
+
+## 3. 版本号
 
 资源路径更新为：
 
 ```text
-app.js?v=2.14.1
-styles.css?v=2.14.1
-manifest.webmanifest?v=2.14.1
+app.js?v=2.17.1
+styles.css?v=2.17.1
+manifest.webmanifest?v=2.17.1
+```
+
+兼容性检查弹窗底部显示：
+
+```text
+v2.17.1
 ```
