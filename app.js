@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.4";
+  const IROTO_WEB_VERSION = "2.14.5";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1078,30 +1078,34 @@
   }
 
   function beginImmersiveFromGesture() {
-    // v2.14.4: automatic fullscreen remains disabled.
-    // Fullscreen hints were disruptive, so playback stays in normal page mode.
-    return null;
+    // v2.13: restore browser fullscreen for performance.
+    // In normal web page mode, mobile status/browser bars cannot be hidden by
+    // CSS. Fullscreen may show a native exit hint, but it gives the landscape
+    // performance screen enough usable space.
+    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+      try {
+        const p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch (err) {
+        // ignore; playback and UI still work
+      }
+    }
   }
 
   async function lockOrientationForPlay() {
-    // v2.14.4: restore rotation lock at playback start.
-    // Do not enter fullscreen, but still try to lock the current orientation.
-    // Some mobile browsers require fullscreen for screen.orientation.lock();
-    // in that case this fails silently and the performance still works.
     state.playOrientationType = currentOrientationType();
     state.playDisplayRotation = getDisplayRotationCode();
     state.lockedOrientation = false;
 
+    beginImmersiveFromGesture();
+
     if (!screen.orientation || !screen.orientation.lock) return;
-
-    const type = state.playOrientationType;
-    const lockType = String(type).startsWith("landscape") ? "landscape" : "portrait";
-
+    const lockType = state.playOrientationType.startsWith("landscape") ? "landscape" : "portrait";
     try {
       await screen.orientation.lock(lockType);
       state.lockedOrientation = true;
     } catch (err) {
-      // Browser may reject orientation lock outside fullscreen.
+      console.warn("Orientation lock failed", err);
       state.lockedOrientation = false;
     }
   }

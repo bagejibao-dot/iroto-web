@@ -1,4 +1,4 @@
-const CACHE_NAME = "iroto-web-v2-14-4-disabled";
+const CACHE_NAME = "iroto-web-v2-14-5-disabled";
 const ASSETS = [
   "./",
   "./index.html",
