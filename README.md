@@ -63,3 +63,21 @@ app.js?v=2.14.1
 styles.css?v=2.14.1
 manifest.webmanifest?v=2.14.1
 ```
+
+---
+
+# Minimal fix based on v2.14.1
+
+This package is based directly on the uploaded v2.14.1 file.
+
+Only these three changes were made:
+
+```text
+1. Japanese compatibility status: 「環境依存」→「要確認」
+2. Language selector border-radius set to 999px
+3. English home hint:
+   We recommend Chrome on Android and Safari on iPhone.
+   Please allow all permissions.
+```
+
+No version number, fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.

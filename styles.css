@@ -1353,3 +1353,9 @@ html, body, #app {
   font-size: 11px;
   opacity: 0.72;
 }
+
+/* Minimal fix: match language selector roundness with the compatibility icon */
+.lang-select {
+  border-radius: 999px !important;
+}
+
