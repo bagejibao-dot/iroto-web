@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -880,19 +880,13 @@
 
   function latchQuantizedMapping() {
     const mapping = state.candidateMapping || sampleAndMap();
-    const previousMidi = state.currentMidi;
     state.currentMidi = mapping.midi;
     state.currentNoteLabel = mapping.note;
     state.sampleColor = mapping.css;
 
-    // Android v5.26 haptic follows note events, not a plain metronome pulse.
-    // In Web v0.8, vibrate only when the quantized pitch/Rest state changes
-    // into a sounding note. This avoids constant beat vibration while preserving
-    // color-change feedback.
-    if (mapping.midi != null && mapping.midi !== previousMidi && "vibrate" in navigator) {
-      const duration = 10;
-      try { navigator.vibrate(duration); } catch (err) { /* ignore */ }
-    }
+    // Beat-haptic build:
+    // Do not vibrate on new note changes. Haptic feedback is handled by
+    // triggerBeatHaptic() so it follows the metronome pattern instead.
   }
 
   function quantizeLoop() {
@@ -909,12 +903,25 @@
     requestAnimationFrame(quantizeLoop);
   }
 
+  function triggerBeatHaptic(pos) {
+    if (!("vibrate" in navigator)) return;
+
+    // The sequencer ticks in eighth notes. Use only the quarter-note positions
+    // for haptics so the vibration feels like a metronome:
+    // pos 0 = beat 1 strong, pos 2/4/6 = beats 2/3/4 weak.
+    if (pos % 2 !== 0) return;
+
+    const duration = pos === 0 ? 30 : 12;
+    try { navigator.vibrate(duration); } catch (err) { /* ignore */ }
+  }
+
   function triggerTick(t) {
     const pos = state.eighthCounter % 8;
     triggerHat(t);
     if (pos === 0 || pos === 4) triggerKick(t);
     if (pos === 2 || pos === 6) triggerSnare(t);
 
+    triggerBeatHaptic(pos);
     latchQuantizedMapping();
     applyCandidateNote(t);
     state.eighthCounter++;

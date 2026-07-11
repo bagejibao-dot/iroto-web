@@ -81,3 +81,33 @@ Only these three changes were made:
 ```
 
 No version number, fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.
+
+---
+
+# Beat haptic test build
+
+This package is based on the v2.14.1 minimal fix build.
+
+Only the haptic behavior was changed:
+
+```text
+Before:
+Vibration happened when a new sounding note appeared.
+
+After:
+Vibration follows the metronome.
+Beat 1: strong vibration
+Beats 2, 3, 4: weak vibration
+Eighth-note subdivisions: no vibration
+```
+
+Technical note:
+
+```text
+Browser Vibration API cannot control amplitude reliably.
+Strong / weak is simulated by vibration duration:
+Strong = 30 ms
+Weak = 12 ms
+```
+
+No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.
