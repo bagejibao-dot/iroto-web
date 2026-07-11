@@ -1,4 +1,4 @@
-const CACHE_NAME = "iroto-web-v2-14-1-beat-haptic-disabled";
+const CACHE_NAME = "iroto-web-v2-14-1-beat-haptic-stronger-disabled";
 const ASSETS = [
   "./",
   "./index.html",

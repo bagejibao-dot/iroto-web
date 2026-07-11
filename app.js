@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -911,8 +911,22 @@
     // pos 0 = beat 1 strong, pos 2/4/6 = beats 2/3/4 weak.
     if (pos % 2 !== 0) return;
 
-    const duration = pos === 0 ? 30 : 12;
-    try { navigator.vibrate(duration); } catch (err) { /* ignore */ }
+    // Browser vibration cannot reliably control amplitude, so make the
+    // difference easier to feel by using a double pulse for beat 1 and a short
+    // single pulse for weak beats. The strongest pattern is kept well below one
+    // quarter-note beat at the current max BPM 160: 60000 / 160 = 375 ms.
+    const beatMs = 60000 / Math.max(1, state.bpm);
+    const weakDuration = Math.min(22, Math.max(14, Math.round(beatMs * 0.045)));
+    const strongOn = Math.min(70, Math.max(50, Math.round(beatMs * 0.16)));
+    const strongGap = Math.min(32, Math.max(20, Math.round(beatMs * 0.06)));
+    const strongPattern = [strongOn, strongGap, strongOn];
+    const strongTotal = strongOn + strongGap + strongOn;
+
+    const pattern = pos === 0
+      ? (strongTotal < beatMs ? strongPattern : Math.max(70, Math.round(beatMs * 0.45)))
+      : weakDuration;
+
+    try { navigator.vibrate(pattern); } catch (err) { /* ignore */ }
   }
 
   function triggerTick(t) {

@@ -111,3 +111,28 @@ Weak = 12 ms
 ```
 
 No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.
+
+---
+
+# Stronger beat haptic adjustment
+
+This package is based on the beat-haptic test build.
+
+Only the beat haptic strength difference was changed:
+
+```text
+Weak beats:
+single short pulse, about 14–22 ms
+
+Strong beat:
+double pulse, about 50–70 ms + 20–32 ms gap + 50–70 ms
+```
+
+At the current max BPM 160:
+
+```text
+One quarter-note beat = 375 ms
+Strongest haptic pattern is about 120–172 ms, safely shorter than one beat
+```
+
+No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.
