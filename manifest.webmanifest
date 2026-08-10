@@ -2,7 +2,7 @@
   "name": "Iroto Web",
   "short_name": "Iroto",
   "start_url": "./index.html",
-  "display": "fullscreen",
+  "display": "browser",
   "background_color": "#05070b",
   "theme_color": "#06080c",
   "icons": [
@@ -10,18 +10,12 @@
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "iroto-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],

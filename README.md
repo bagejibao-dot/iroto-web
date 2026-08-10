@@ -211,3 +211,80 @@ Version/cache suffix:
 ```text
 2.14.1-beat-haptic-stronger-logo-v2
 ```
+
+---
+
+# Logo v3 replacement
+
+This package uses the newly uploaded SVG file:
+
+```text
+/mnt/data/sehuan-1.svg
+```
+
+The packaged logo is:
+
+```text
+iroto-logo.svg
+```
+
+SHA-256 check:
+
+```text
+uploaded: 39f08e4affa5f8599cb7d593ce12c7c2a8ec3a73401f533317a20e0a970e5579
+packaged: 39f08e4affa5f8599cb7d593ce12c7c2a8ec3a73401f533317a20e0a970e5579
+```
+
+The PNG icons were regenerated from this same SVG:
+
+```text
+apple-touch-icon.png
+icon-192.png
+icon-512.png
+```
+
+No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, haptics, recording, photo import, or control layout was changed.
+
+Version/cache suffix:
+
+```text
+2.14.1-beat-haptic-stronger-logo-v3
+```
+
+---
+
+# Shortcut icon build
+
+This package is based on the logo v3 build.
+
+Goals:
+
+```text
+1. Prefer browser shortcut behavior over installed-app behavior.
+2. Keep opening in the normal Chrome browser UI.
+3. Make home-screen icons smaller inside the icon frame.
+4. Use the same dark background for Chrome shortcut and install-style icon assets.
+```
+
+Changes:
+
+```text
+manifest display: fullscreen → browser
+manifest icon purpose: any maskable → any
+service worker registration: disabled if registration code is present
+favicon / apple-touch-icon: use padded PNG icon instead of the raw SVG
+icon-192 / icon-512 / apple-touch-icon: regenerated with dark background and 50% logo scale
+```
+
+Notes:
+
+```text
+Chrome may still show UI wording that depends on the Chrome version and device.
+However, display: browser and no service worker registration make the page less likely to be treated as a full installable PWA.
+```
+
+Version/cache suffix:
+
+```text
+2.14.1-beat-haptic-stronger-logo-shortcut
+```
