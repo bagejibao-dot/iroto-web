@@ -166,3 +166,48 @@ Version/cache suffix:
 ```text
 2.14.1-beat-haptic-stronger-logo-test
 ```
+
+---
+
+# Logo v2 build
+
+This package is based on `Iroto Web v2.14.1 beat haptic stronger logo test`.
+
+Changes:
+
+```text
+1. Replaced homepage logo with the newly uploaded SVG.
+2. Removed the duplicated "Iroto Web" text under the homepage logo.
+3. Updated Chinese homepage bottom hint:
+   Android 建议使用 Chrome，iPhone 建议使用 Safari。
+   请允许所有权限。
+4. Updated Japanese homepage bottom hint:
+   Android は Chrome、iPhone は Safari の使用を推奨します。
+   すべての権限を許可してください。
+5. Added favicon / apple-touch-icon / manifest icons based on the uploaded logo.
+```
+
+Icon behavior note:
+
+```text
+Android Chrome Add to Home Screen usually uses manifest icons.
+iPhone Safari Add to Home Screen usually uses apple-touch-icon.
+Browser bookmark icons usually use favicon.
+```
+
+The SVG was checked for:
+
+```text
+No script tag
+No foreignObject
+No external URL reference
+No inline event handler
+```
+
+No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, haptics, recording, photo import, or control layout was changed.
+
+Version/cache suffix:
+
+```text
+2.14.1-beat-haptic-stronger-logo-v2
+```

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-test";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v2";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -46,8 +46,8 @@
       fileNone: "写真未選択",
       heroText: "写真を選択し、傾けて演奏しましょう。",
       heroHtml: "写真を選択し、<br>傾けて演奏しましょう。",
-      hint: "Android は Chrome、iPhone は Safari 推奨。すべての権限を許可してください。",
-      hintHtml: "Android は Chrome、iPhone は Safari 推奨。<br>すべての権限を許可してください。",
+      hint: "Android は Chrome、iPhone は Safari の使用を推奨します。すべての権限を許可してください。",
+      hintHtml: "Android は Chrome、iPhone は Safari の使用を推奨します。<br>すべての権限を許可してください。",
       choosePhoto: "写真を選択",
       takePhotoFromHome: "写真を選択",
       photoTitle: "写真を選択",
@@ -104,8 +104,8 @@
       fileNone: "未选择照片",
       heroText: "选择照片，倾斜手机演奏。",
       heroHtml: "选择照片，<br>倾斜手机演奏。",
-      hint: "Android 建议 Chrome，iPhone 建议 Safari。请允许所有权限。",
-      hintHtml: "Android 建议 Chrome，iPhone 建议 Safari。<br>请允许所有权限。",
+      hint: "Android 建议使用 Chrome，iPhone 建议使用 Safari。请允许所有权限。",
+      hintHtml: "Android 建议使用 Chrome，iPhone 建议使用 Safari。<br>请允许所有权限。",
       choosePhoto: "选择照片",
       takePhotoFromHome: "选择照片",
       photoTitle: "选择照片",
