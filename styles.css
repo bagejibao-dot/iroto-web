@@ -1359,3 +1359,43 @@ html, body, #app {
   border-radius: 999px !important;
 }
 
+
+
+/* Logo test: use uploaded SVG as homepage icon */
+.logo-dot {
+  width: 96px !important;
+  height: 96px !important;
+  display: block !important;
+  place-items: initial !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .logo-dot {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 380px) {
+  .logo-dot {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}

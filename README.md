@@ -136,3 +136,33 @@ Strongest haptic pattern is about 120–172 ms, safely shorter than one beat
 ```
 
 No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, recording, photo import, layout, or icon design was changed.
+
+---
+
+# Logo test build
+
+This package is based on `Iroto Web v2.14.1 beat haptic stronger`.
+
+Only the homepage logo was changed:
+
+```text
+Original homepage logo: built-in text/icon
+New homepage logo: uploaded SVG file, packaged as iroto-logo.svg
+```
+
+The SVG was checked for:
+
+```text
+No script tag
+No foreignObject
+No external URL reference
+No inline event handler
+```
+
+No fullscreen logic, orientation lock, sensor behavior, cursor smoothing, haptics, recording, photo import, or control layout was changed.
+
+Version/cache suffix:
+
+```text
+2.14.1-beat-haptic-stronger-logo-test
+```
