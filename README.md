@@ -288,3 +288,8 @@ Version/cache suffix:
 ```text
 2.14.1-beat-haptic-stronger-logo-shortcut
 ```
+
+
+---
+
+Shortcut icon v2 tweak: increased home-screen logo scale from about 50% to about 64% while keeping the same dark background and browser-shortcut behavior.
