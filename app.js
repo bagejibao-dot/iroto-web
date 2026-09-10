@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs1";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs2";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -343,6 +343,9 @@
     lastCanvasCssW: 0,
     lastCanvasCssH: 0,
     lockedOrientation: false,
+    // nofs2: retain the current screen mapping until a real display rotation.
+    screenRotationPending: null,
+    screenRotationTimer: null,
     playOrientationType: "portrait-primary"
   };
 
@@ -1078,7 +1081,30 @@
   }
 
   function currentOrientationType() {
-    if (screen.orientation && screen.orientation.type) return screen.orientation.type;
+    const orientation = screen.orientation;
+    if (orientation && /^(portrait|landscape)-(primary|secondary)$/.test(orientation.type)) {
+      return orientation.type;
+    }
+
+    // Older Safari uses window.orientation instead of ScreenOrientation.
+    // Read display rotation, never alpha/beta/gamma: normal tilting must not
+    // change the coordinate mapping, even past a large physical angle.
+    if (typeof window.orientation === "number" && Number.isFinite(window.orientation)) {
+      const angle = ((window.orientation % 360) + 360) % 360;
+      if (angle === 90) return "landscape-primary";
+      if (angle === 270) return "landscape-secondary";
+      if (angle === 180) return "portrait-secondary";
+      if (angle === 0) return "portrait-primary";
+    }
+
+    // Last-resort fallback without either screen-orientation API. An editable
+    // field may shrink the viewport when the keyboard opens; keep the active
+    // mapping rather than mistake that resize for a physical rotation.
+    const focused = document.activeElement;
+    if (state.playing && focused &&
+        (focused.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(focused.tagName))) {
+      return state.playOrientationType;
+    }
     return window.innerWidth >= window.innerHeight ? "landscape-primary" : "portrait-primary";
   }
 
@@ -1086,9 +1112,10 @@
     const type = currentOrientationType();
     const angle = screen.orientation && typeof screen.orientation.angle === "number"
       ? screen.orientation.angle
-      : (type.includes("secondary") ? 270 : 0);
+      : (typeof window.orientation === "number" ? window.orientation :
+          (type.includes("secondary") ? 270 : 0));
 
-    // Android Surface constants:
+    // Existing mapping retained, with the legacy Safari angle as fallback.
     // ROTATION_0 = 0, ROTATION_90 = 1, ROTATION_180 = 2, ROTATION_270 = 3.
     if (type.startsWith("landscape")) {
       if (type.includes("secondary") || angle === 270 || angle === -90) return 3;
@@ -1098,11 +1125,74 @@
     return 0;
   }
 
+  function cancelScreenRotationTransition() {
+    if (state.screenRotationTimer !== null) clearTimeout(state.screenRotationTimer);
+    state.screenRotationTimer = null;
+    state.screenRotationPending = null;
+  }
+
+  function syncPerformanceScreenOrientation() {
+    if (!state.playing) {
+      cancelScreenRotationTransition();
+      return false;
+    }
+
+    const type = currentOrientationType();
+    const rotation = getDisplayRotationCode();
+    if (type === state.playOrientationType && rotation === state.playDisplayRotation) {
+      cancelScreenRotationTransition();
+      return false;
+    }
+
+    const now = performance.now();
+    const pending = state.screenRotationPending;
+    if (!pending || pending.type !== type || pending.rotation !== rotation) {
+      cancelScreenRotationTransition();
+      // Display metadata and resize events can arrive separately. Apply one
+      // transition after the display direction has settled, not on every event.
+      state.screenRotationPending = { type, rotation, readyAt: now + 180 };
+      state.screenRotationTimer = setTimeout(syncPerformanceScreenOrientation, 190);
+      state.targetNormX = state.normX;
+      state.targetNormY = state.normY;
+      return true;
+    }
+    if (now < pending.readyAt) return true;
+
+    cancelScreenRotationTransition();
+    state.playOrientationType = type;
+    state.playDisplayRotation = rotation;
+
+    // Reuse the existing calibration. Keep the displayed position so the
+    // unchanged Web smoothing eases to the centre instead of teleporting.
+    // The next valid orientation sample becomes the new posture baseline.
+    const x = state.normX;
+    const y = state.normY;
+    recenter();
+    state.normX = x;
+    state.normY = y;
+    state.trail = [];
+    // Do not stop playback/recording, reset the beat counter, or resize the
+    // independent photo-aspect recording canvas.
+    return false;
+  }
+
+  function watchScreenOrientationChanges() {
+    if (screen.orientation && typeof screen.orientation.addEventListener === "function") {
+      screen.orientation.addEventListener("change", syncPerformanceScreenOrientation);
+    }
+    window.addEventListener("orientationchange", syncPerformanceScreenOrientation);
+    window.addEventListener("resize", syncPerformanceScreenOrientation);
+    window.addEventListener("pageshow", syncPerformanceScreenOrientation);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) syncPerformanceScreenOrientation();
+    });
+  }
+
   function beginImmersiveFromGesture() {
     // nofs1: keep both Android and iPhone in the regular browser view.
     // Intentionally leave the existing call sites as no-ops: do not enter or
     // restore fullscreen when starting playback or trying orientation lock.
-    // The orientation attempt and the per-take sensor mapping are unchanged.
+    // Fullscreen remains independent of the display-orientation mapping.
     return null;
   }
 
@@ -1133,6 +1223,7 @@
   }
 
   function resetPerformanceState() {
+    cancelScreenRotationTransition();
     state.currentMidi = null;
     state.currentNoteLabel = "Rest";
     state.candidateMidi = null;
@@ -1185,6 +1276,8 @@
     await lockOrientationForPlay();
     await ensureAudio();
 
+    state.playOrientationType = currentOrientationType();
+    state.playDisplayRotation = getDisplayRotationCode();
     state.playing = true;
     updateRecordButton();
     state.eighthCounter = 0;
@@ -1200,6 +1293,7 @@
   }
 
   function stopPlaying() {
+    cancelScreenRotationTransition();
     state.playing = false;
     updateRecordButton();
     unlockOrientationAfterPlay();
@@ -1755,6 +1849,7 @@
 
   function onOrientation(e) {
     if (!state.sensorEnabled || !state.playing) return;
+    if (syncPerformanceScreenOrientation()) return;
 
     const alpha = typeof e.alpha === "number" ? e.alpha : null; // z
     const beta = typeof e.beta === "number" ? e.beta : null;    // x
@@ -2106,6 +2201,7 @@
   }
 
   wireEvents();
+  watchScreenOrientationChanges();
   applyLanguage("ja");
   registerSW();
   requestAnimationFrame(draw);
