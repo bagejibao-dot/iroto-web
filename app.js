@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs2";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs3";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -17,6 +17,10 @@
     playBtn: document.getElementById("playBtn"),
     recordBtn: document.getElementById("recordBtn"),
     recordTimer: document.getElementById("recordTimer"),
+    recordElapsed: document.getElementById("recordElapsed"),
+    performanceStatus: document.getElementById("performanceStatus"),
+    beatIndicator: document.getElementById("beatIndicator"),
+    beatDot: document.getElementById("beatDot"),
     sensorBtn: document.getElementById("sensorBtn"),
     sensorStatus: document.getElementById("sensorStatus"),
     bpmMinus: document.getElementById("bpmMinus"),
@@ -53,6 +57,8 @@
       photoTitle: "写真を選択",
       recordTitle: "録画",
       recordTimerLabel: "録画時間",
+      visualBeatLabel: "拍の表示",
+      visualBeatCurrent: "第 {beat} 拍",
       sensorTitle: "センサーを有効化 / 再センター",
       play: "再生",
       stop: "停止",
@@ -111,6 +117,8 @@
       photoTitle: "选择照片",
       recordTitle: "录制",
       recordTimerLabel: "录制时间",
+      visualBeatLabel: "节拍显示",
+      visualBeatCurrent: "第 {beat} 拍",
       sensorTitle: "启用 / 回正传感器",
       play: "播放",
       stop: "停止",
@@ -169,6 +177,8 @@
       photoTitle: "Choose Photo",
       recordTitle: "Record",
       recordTimerLabel: "Recording time",
+      visualBeatLabel: "Visual metronome",
+      visualBeatCurrent: "Beat {beat}",
       sensorTitle: "Enable / Recenter Sensor",
       play: "Play",
       stop: "Stop",
@@ -244,6 +254,7 @@
     els.photoBtn.title = t("photoTitle");
     els.recordBtn.title = t("recordTitle");
     if (els.recordTimer) els.recordTimer.title = t("recordTimerLabel");
+    updatePerformanceStatusLabels();
     els.sensorBtn.title = t("sensorTitle");
     els.sensorStatus.textContent = t("sensorLabel");
     els.playBtn.setAttribute("aria-label", state.playing ? t("stop") : t("play"));
@@ -347,6 +358,16 @@
     screenRotationPending: null,
     screenRotationTimer: null,
     playOrientationType: "portrait-primary"
+  };
+
+  const performanceStatusState = {
+    layoutFrame: 0,
+    restoreTransitionFrame: 0,
+    resizeObserver: null,
+    beatTime: null,
+    beatIndex: null,
+    lastOpacity: "",
+    elapsedText: "00:00"
   };
 
   const TRAIL_DURATION_MS = 950;
@@ -629,6 +650,7 @@
     }
 
     if (state.recording) drawRecordingFrame();
+    updateVisualMetronome();
 
     requestAnimationFrame(draw);
   }
@@ -939,6 +961,7 @@
     if (pos === 2 || pos === 6) triggerSnare(t);
 
     triggerBeatHaptic(pos);
+    markVisualBeat(pos, t);
     latchQuantizedMapping();
     applyCandidateNote(t);
     state.eighthCounter++;
@@ -1032,6 +1055,7 @@
     } else {
       els.playBtn.classList.remove("transport-hidden");
     }
+    syncPerformanceStatus();
   }
 
   function setTransportButton(playing) {
@@ -1333,6 +1357,135 @@
     return { mime: "", ext: "webm" };
   }
 
+  // Display-only helpers. Screen orientation, cursor mapping, audio scheduling,
+  // vibration patterns and the independent recording canvas remain unchanged.
+  function updatePerformanceStatusLabels() {
+    if (els.beatIndicator) {
+      const beat = performanceStatusState.beatIndex;
+      els.beatIndicator.setAttribute("aria-label", beat == null
+        ? t("visualBeatLabel")
+        : t("visualBeatCurrent").replace("{beat}", String(beat + 1)));
+      els.beatIndicator.title = t("visualBeatLabel");
+    }
+    if (els.recordTimer) {
+      els.recordTimer.setAttribute("aria-label",
+        `${t("recordTimerLabel")} ${performanceStatusState.elapsedText}`);
+    }
+  }
+
+  function setRecordingElapsedText(text) {
+    performanceStatusState.elapsedText = text;
+    if (els.recordElapsed) els.recordElapsed.textContent = text;
+    // Retain the same capsule width when elapsed time grows to h:mm:ss.
+    if (els.recordTimer) els.recordTimer.classList.toggle("timer-long", text.length > 6);
+    updatePerformanceStatusLabels();
+  }
+
+  function resetVisualMetronome() {
+    performanceStatusState.beatTime = null;
+    performanceStatusState.beatIndex = null;
+    performanceStatusState.lastOpacity = "0";
+    if (els.beatDot) els.beatDot.style.setProperty("--beat-opacity", "0");
+    if (els.beatIndicator) delete els.beatIndicator.dataset.beat;
+    updatePerformanceStatusLabels();
+  }
+
+  function markVisualBeat(pos, audioTime) {
+    if (!state.playing || pos % 2 !== 0 || !Number.isFinite(audioTime)) return;
+    const beat = (pos % 8) / 2;
+    performanceStatusState.beatIndex = beat;
+    performanceStatusState.beatTime = audioTime;
+    if (els.beatDot) els.beatDot.style.setProperty("--beat-color", beat === 0 ? "#ff526b" : "#f5f7ff");
+    if (els.beatIndicator) els.beatIndicator.dataset.beat = String(beat + 1);
+    updatePerformanceStatusLabels();
+  }
+
+  function updateVisualMetronome() {
+    if (!state.playing || !audio.ctx || !els.beatDot || els.performanceStatus.hidden) return;
+    const time = performanceStatusState.beatTime;
+    const beat = performanceStatusState.beatIndex;
+    const beatMs = 60000 / Math.max(1, state.bpm);
+    // One pulse per quarter-note beat (no double visual flash on beat 1).
+    const durationMs = Math.min(beat === 0 ? 140 : 90, beatMs * 0.40);
+    const ageMs = time == null ? Infinity : (audio.ctx.currentTime - time) * 1000;
+    const life = ageMs >= 0 ? clamp(1 - ageMs / durationMs, 0, 1) : 0;
+    const opacity = String(Math.round(Math.pow(life, 0.55) * 1000) / 1000);
+    if (opacity !== performanceStatusState.lastOpacity) {
+      els.beatDot.style.setProperty("--beat-opacity", opacity);
+      performanceStatusState.lastOpacity = opacity;
+    }
+  }
+
+  function measurePerformanceStatusLayout() {
+    const layer = els.performanceStatus;
+    if (!layer || !els.topbar || !els.langSelect || !els.helpBtn) return;
+    const lang = els.langSelect.getBoundingClientRect();
+    const help = els.helpBtn.getBoundingClientRect();
+    if (lang.width <= 0 || lang.height <= 0 || help.width <= 0) return;
+    // offsetTop/offsetHeight ignore the topbar's existing hide animation.
+    // DOM rects for X include the existing landscape safe-area margins.
+    const height = lang.height;
+    const restTop = Math.max(0, els.topbar.offsetTop + els.helpBtn.offsetTop + els.helpBtn.offsetHeight / 2 - height / 2);
+    const expandedTop = Math.max(restTop, els.topbar.offsetTop + els.topbar.offsetHeight + 12);
+    const radius = getComputedStyle(els.langSelect).borderTopLeftRadius;
+    const values = {
+      "--status-rest-top": `${restTop}px`,
+      "--status-expanded-offset": `${expandedTop - restTop}px`,
+      "--status-left": `${lang.left}px`,
+      "--status-pill-width": `${lang.width}px`,
+      "--status-pill-height": `${height}px`,
+      "--status-pill-radius": radius,
+      "--status-beat-center-x": `${help.left + help.width / 2}px`
+    };
+    for (const [name, value] of Object.entries(values)) {
+      if (layer.style.getPropertyValue(name) !== value) layer.style.setProperty(name, value);
+    }
+  }
+
+  function schedulePerformanceStatusLayout() {
+    if (performanceStatusState.layoutFrame) return;
+    performanceStatusState.layoutFrame = requestAnimationFrame(() => {
+      performanceStatusState.layoutFrame = 0;
+      // Layout/rotation changes snap to their new anchors. Only toolbar
+      // show/hide is animated, preventing an unintended diagonal slide.
+      els.performanceStatus.classList.add("status-layout-reset");
+      measurePerformanceStatusLayout();
+      // Commit the new anchors while transitions are disabled.
+      if (!els.performanceStatus.hidden) void els.performanceStatus.offsetHeight;
+      cancelAnimationFrame(performanceStatusState.restoreTransitionFrame);
+      performanceStatusState.restoreTransitionFrame = requestAnimationFrame(() => {
+        performanceStatusState.restoreTransitionFrame = 0;
+        els.performanceStatus.classList.remove("status-layout-reset");
+      });
+    });
+  }
+
+  function syncPerformanceStatus() {
+    if (!els.performanceStatus) return;
+    const show = !!(state.playing && state.image);
+    if (show && els.performanceStatus.hidden) measurePerformanceStatusLayout();
+    els.performanceStatus.dataset.controlsVisible = state.controlsVisible ? "true" : "false";
+    els.performanceStatus.hidden = !show;
+    els.recordTimer.hidden = !(show && state.recording);
+    if (!show) resetVisualMetronome();
+  }
+
+  function watchPerformanceStatusLayout() {
+    window.addEventListener("resize", schedulePerformanceStatusLayout, { passive: true });
+    window.addEventListener("orientationchange", schedulePerformanceStatusLayout, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", schedulePerformanceStatusLayout, { passive: true });
+      window.visualViewport.addEventListener("scroll", schedulePerformanceStatusLayout, { passive: true });
+    }
+    if (typeof ResizeObserver === "function") {
+      performanceStatusState.resizeObserver = new ResizeObserver(schedulePerformanceStatusLayout);
+      for (const element of [els.topbar, els.langSelect, els.helpBtn]) {
+        performanceStatusState.resizeObserver.observe(element);
+      }
+    }
+    schedulePerformanceStatusLayout();
+  }
+
   function formatElapsedTime(ms) {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     const minutes = Math.floor(totalSeconds / 60);
@@ -1348,14 +1501,14 @@
   function updateRecordingTimer() {
     if (!state.recording || !els.recordTimer) return;
     const elapsed = performance.now() - state.recordingStartedAtMs;
-    els.recordTimer.textContent = `● ${formatElapsedTime(elapsed)}`;
+    setRecordingElapsedText(formatElapsedTime(elapsed));
   }
 
   function startRecordingTimer() {
     if (!els.recordTimer) return;
     state.recordingStartedAtMs = performance.now();
-    els.recordTimer.textContent = "● 00:00";
-    els.recordTimer.classList.remove("hidden");
+    setRecordingElapsedText("00:00");
+    syncPerformanceStatus();
     clearInterval(state.recordingTimerId);
     state.recordingTimerId = setInterval(updateRecordingTimer, 250);
   }
@@ -1365,8 +1518,8 @@
     state.recordingTimerId = null;
     state.recordingStartedAtMs = 0;
     if (els.recordTimer) {
-      els.recordTimer.classList.add("hidden");
-      els.recordTimer.textContent = "● 00:00";
+      setRecordingElapsedText("00:00");
+      syncPerformanceStatus();
     }
   }
 
@@ -2202,6 +2355,7 @@
 
   wireEvents();
   watchScreenOrientationChanges();
+  watchPerformanceStatusLayout();
   applyLanguage("ja");
   registerSW();
   requestAnimationFrame(draw);
