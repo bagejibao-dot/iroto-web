@@ -3,8 +3,8 @@
   "short_name": "Iroto",
   "start_url": "./index.html",
   "display": "browser",
-  "background_color": "#05070b",
-  "theme_color": "#06080c",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
   "icons": [
     {
       "src": "icon-192.png",
@@ -16,6 +16,12 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "iroto-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],

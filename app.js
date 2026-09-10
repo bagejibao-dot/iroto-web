@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-shortcut";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs1";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1099,18 +1099,11 @@
   }
 
   function beginImmersiveFromGesture() {
-    // v2.13: restore browser fullscreen for performance.
-    // In normal web page mode, mobile status/browser bars cannot be hidden by
-    // CSS. Fullscreen may show a native exit hint, but it gives the landscape
-    // performance screen enough usable space.
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-      try {
-        const p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      } catch (err) {
-        // ignore; playback and UI still work
-      }
-    }
+    // nofs1: keep both Android and iPhone in the regular browser view.
+    // Intentionally leave the existing call sites as no-ops: do not enter or
+    // restore fullscreen when starting playback or trying orientation lock.
+    // The orientation attempt and the per-take sensor mapping are unchanged.
+    return null;
   }
 
   async function lockOrientationForPlay() {
@@ -1136,7 +1129,7 @@
       try { screen.orientation.unlock(); } catch (err) { console.warn(err); }
     }
     state.lockedOrientation = false;
-    // v2.13: playback may enter browser fullscreen automatically.
+    // nofs1: stopping playback leaves the page in its current browser view.
   }
 
   function resetPerformanceState() {

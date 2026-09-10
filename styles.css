@@ -1443,3 +1443,47 @@ html, body, #app {
     height: 50px !important;
   }
 }
+
+
+/* Logo v3: new SVG logo, stable homepage sizing */
+.logo-dot {
+  width: 112px !important;
+  height: 112px !important;
+  display: block !important;
+  place-items: initial !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.empty-state {
+  gap: 14px;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .logo-dot {
+    width: 64px !important;
+    height: 64px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 380px) {
+  .logo-dot {
+    width: 50px !important;
+    height: 50px !important;
+  }
+}
