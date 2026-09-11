@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs3";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4";
 
   const els = {
     canvas: document.getElementById("stage"),
