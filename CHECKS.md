@@ -1,30 +1,36 @@
-# nofs7 检查记录
+# nofs8 检查记录
 
-## 源码边界
+## 源码范围
 
-- node --check app.js 通过。
-- 与 nofs6 对比，115 个既有具名函数逐字一致，包括传感器、方向同步、取色、准星平滑、计时起点、节拍点时序、强弱拍振动、录制和下载等函数。
-- 3 个既有函数有变化：applyLanguage（iOS 选图按钮文案）、loadFile（iOS 非图片校验）、wireEvents（初始化 file input 类型）。新增 configurePhotoFilePicker / isImageFileCandidate 两个导入辅助函数。
-- 另外修改版本常量、增加独立的 iOS 文件选择识别常量和三语文案。没有改变用于渲染/传感器处理的 IS_MOBILE 判断。
-- CSS 只修改 #recordElapsed 一段，明确行高/边距并添加可见字形边界修正。没有叠加新的整页覆盖样式，也没有裁切文字。
-- HTML 仅更新版本号和资源查询参数。SVG、PNG、manifest、sw.js 逐字节不变。
+- `node --check app.js` 通过。
+- 与 nofs7 对比，115 个既有具名函数逐字一致。
+- 修改 applyLanguage / loadFile / wireEvents，仅用于恢复选图文案和原来的图片导入方式。
+- 删除 nofs7 专门为 iOS Files 入口增加的 USE_IOS_FILE_PICKER 常量、两组翻译键及 configurePhotoFilePicker / isImageFileCandidate 辅助函数。
+- JavaScript 在忽略版本常量后，与 nofs6 完全一致。这是对 nofs7 图片入口改动的准确撤回；并非使用旧版样式。
+- styles.css 与 nofs7 逐字节一致，保留其数字字形垂直对齐修正。CSS SHA-256：`b2d9fad23af88c70fc798ac8f1fbaefa772530c3b2f895bcbbe1a63fa7a4baa1`。
+- HTML 只更新 nofs7 → nofs8 资源查询版本和版本文字；其 file input 保持 image/*、无 capture。
+- SVG、三张 PNG、manifest 和 sw.js 与 nofs7 逐字节一致。
+- 测试接口、模拟代码、截图和样本视频未放入发布包。
 
 ## 本地 Chromium 检查
 
-Chromium 144.0.7559.96，离线注入本地 HTML/CSS/JS；测试专用状态接口不在发布包内。
+浏览器：Chromium 144.0.7559.96。本地 URL 导航受运行环境限制，使用离线 HTML/CSS/JS 注入测试；临时公开只用于测试的状态接口，交付代码不包含这些接口。
 
-- 6 种视口：320×568、390×780、430×932、568×320、844×390、640×280。
-- 三语言、控制栏显示/隐藏、00:00 / 12:34 / 25:01:01，共 108 组几何组合。文字框与圆点的垂直中心同计时框一致，偏差 <0.1 CSS px；水平边界未溢出。
-- 在三种视口的黑色测试底图上，按截图白色字形像素测量，实际数字上下空白误差约 0.17 CSS px。这比只核对 DOM 框更接近可见对齐，但不是 iPhone 字体测试。
-- 禁用 text-box-trim 时核对原行框 flex 居中回退；不宣称旧浏览器具有相同的字形精确对齐。
-- 毛玻璃仍为 blur(10px)，提示层仍不拦截点击，非录制隐藏整个计时框。
-- 模拟 iPhone 用户代理及 iPadOS 桌面用户代理，确认 accept 为 application/octet-stream、无 capture；Mac 桌面和 Android 为 image/*。三语文件按钮文字正常。
-- JPEG / PNG / WebP、通用 MIME 图片导入通过。PDF 和损坏 JPEG 分别触发类型/解码提示，原图保留；取消选择不清空原图；出错后重新选图可继续。
-- 实际 Web Audio + MediaRecorder 录制、视口旋转、停止、命名窗口、下载通过，产物 sample.mp4，167283 字节。旋转未重置计时起点，全屏申请次数为 0。
-- 没有观察到未捕获脚本异常。
+本轮 183 项重复断言通过，属于有限的导入与录制冒烟检查，不是全部功能或全部浏览器的覆盖。
 
-## 本次没有验证的内容
+- 模拟 iPhone、iPad、iPadOS 桌面用户代理、Android、桌面五种用户代理/触摸条件。它们全部使用 Chromium，不是五种真实系统。
+- 每种环境分别切换日语、中文、英文：选择按钮和替换按钮恢复照片文案；accept 始终为 image/*，没有 capture。
+- 点击首页选择和演奏页替换按钮会触发同一个 file input；注入测试文件可正常显示照片。
+- 取消以空文件结果模拟：不清空原图。重新选择同一张照片可导入。
+- JPEG、PNG、WebP 以及空/通用 MIME 的图片通过原解码路径。损坏 JPEG 和 PDF 弹出原读取失败提示，旧图保留；错误后再次选择可继续。
+- 演奏中替换照片按原规则先停止，再打开选择入口；未录制时没有常驻视觉节拍器。
+- 实际录制过程中检查 390×780、844×390、640×280，控制栏显示和隐藏各一次：时间与圆点垂直中心偏差小于 1 CSS px；文字在胶囊内部，text-box-trim: trim-both 和 blur(10px) 保持。
+- 改变视口尺寸后录制继续，计时正常增长；停止后提示层隐藏、保存窗口正常出现。
+- 实际 Web Audio / MediaRecorder 下载完成。样本为 photo_green.mp4，168511 字节；ffprobe 读取到 1440×1080 视频轨道与音频轨道，时长约 4.143 秒。
+- 全部页面全屏申请次数为 0；没有观察到未捕获脚本异常或 Promise 拒绝。
 
-没有实体 iPhone/iPad/Android 测试，没有 iOS 原生文件选择 UI。因此，设置 accept 和成功注入测试文件，不等于已经证明 iOS 原生菜单不再出现拍照，也不等于验证了 Files 中所有格式都能正常点选。需要在 iPhone 上核对这两点。
+## 尚未验证
 
-没有重测所有既有功能，没有声称消除全部历史问题。HEIC/TIFF 的实际解码能力、Safari 旧版本、硬件传感器和系统键盘行为不在本地验证覆盖范围内。
+没有实体 iPhone/iPad Safari 或 Android 手机测试；本地 filechooser 事件与文件注入不证明原生菜单实际显示哪些项目。没有验证照片权限交互、Safari HEIC 等格式解码、真实传感器、硬件触觉或全部浏览器版本。
+
+未重新测试所有已有功能，也未改变其它已知或潜在问题。
