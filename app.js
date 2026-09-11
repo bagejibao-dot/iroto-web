@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs6";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs7";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -53,6 +53,8 @@
       hint: "Android は Chrome、iPhone は Safari の使用を推奨します。すべての権限を許可してください。",
       hintHtml: "Android は Chrome、iPhone は Safari の使用を推奨します。<br>すべての権限を許可してください。",
       choosePhoto: "写真を選択",
+      chooseImageFile: "画像ファイルを選択",
+      photoFileOnly: "画像ファイルを選択してください。",
       takePhotoFromHome: "写真を選択",
       photoTitle: "写真を選択",
       recordTitle: "録画",
@@ -113,6 +115,8 @@
       hint: "Android 建议使用 Chrome，iPhone 建议使用 Safari。请允许所有权限。",
       hintHtml: "Android 建议使用 Chrome，iPhone 建议使用 Safari。<br>请允许所有权限。",
       choosePhoto: "选择照片",
+      chooseImageFile: "选择图片文件",
+      photoFileOnly: "请选择图片文件，不能导入其他类型的文件。",
       takePhotoFromHome: "选择照片",
       photoTitle: "选择照片",
       recordTitle: "录制",
@@ -173,6 +177,8 @@
       hint: "We recommend Chrome on Android and Safari on iPhone. Please allow all permissions.",
       hintHtml: "We recommend Chrome on Android and Safari on iPhone.<br>Please allow all permissions.",
       choosePhoto: "Choose Photo",
+      chooseImageFile: "Choose Image File",
+      photoFileOnly: "Please choose an image file, not another type of file.",
       takePhotoFromHome: "Choose Photo",
       photoTitle: "Choose Photo",
       recordTitle: "Record",
@@ -250,8 +256,8 @@
     if (!state.image) els.fileName.textContent = t("fileNone");
     setHtml("#homeLead", t("heroHtml"));
     setHtml("#homeHint", t("hintHtml"));
-    els.choosePhotoBtn.textContent = t("choosePhoto");
-    els.photoBtn.title = t("photoTitle");
+    els.choosePhotoBtn.textContent = t(USE_IOS_FILE_PICKER ? "chooseImageFile" : "choosePhoto");
+    els.photoBtn.title = t(USE_IOS_FILE_PICKER ? "chooseImageFile" : "photoTitle");
     els.recordBtn.title = t("recordTitle");
     if (els.recordTimer) els.recordTimer.title = t("recordTimerLabel");
     updatePerformanceStatusLabels();
@@ -280,6 +286,10 @@
 
 
   const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Used only by photo import; iPadOS can identify itself as a Mac.
+  const USE_IOS_FILE_PICKER = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (/Macintosh|MacIntel/i.test(`${navigator.userAgent} ${navigator.platform || ""}`)
+        && navigator.maxTouchPoints > 1);
 
   const state = {
     image: null,
@@ -2179,8 +2189,33 @@
     return raw.length > 28 ? `${raw.slice(0, 18)}…${raw.slice(-7)}` : (raw || "Iroto");
   }
 
+  function configurePhotoFilePicker() {
+    // iOS WebKit offers Camera for image/* (and also for an empty accept list).
+    // A generic data type instead takes its document-picker branch. Keep this
+    // scoped to iOS: other platforms retain their existing image-only picker.
+    // This also removes the direct Photos entry; choose an image saved in Files.
+    // This is a WebKit-specific workaround, not a standard "no camera" option.
+    els.fileInput.accept = USE_IOS_FILE_PICKER ? "application/octet-stream" : "image/*";
+    els.fileInput.removeAttribute("capture");
+  }
+
+  function isImageFileCandidate(file) {
+    const mime = String(file.type || "").split(";", 1)[0].toLowerCase();
+    const imageExtension = /\.(?:jpe?g|jpe|jfif|png|apng|webp|gif|avif|heic|heif|hif|bmp|tiff?|svg|ico)$/i;
+    // Some file providers return no MIME type or generic binary data. Let the
+    // existing Image decoder make the final decision for those cases.
+    return mime.startsWith("image/") || imageExtension.test(file.name || "")
+      || !mime || mime === "application/octet-stream";
+  }
+
   function loadFile(file, source = "file") {
     if (!file) return;
+    // The iOS document picker accepts arbitrary files, so fail without replacing
+    // the current photo when a clearly non-image file is selected.
+    if (USE_IOS_FILE_PICKER && !isImageFileCandidate(file)) {
+      alert(t("photoFileOnly"));
+      return;
+    }
     const url = URL.createObjectURL(file);
     const img = new Image();
     const displayName = displayNameForLoadedFile(file);
@@ -2248,6 +2283,7 @@
   }
 
   function wireEvents() {
+    configurePhotoFilePicker();
     els.saveNameInput.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         e.preventDefault();

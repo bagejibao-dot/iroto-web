@@ -1550,10 +1550,19 @@ html, body, #app {
 }
 #performanceStatus #recordElapsed {
   flex: 0 0 auto;
+  display: block;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 13px;
   letter-spacing: 0;
+  /* nofs7: centre the visible numerals, not the font's unequal top/bottom
+     leading. Supported browsers trim to cap height and alphabetic baseline;
+     older browsers keep the existing, centred single-line flex fallback. */
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
 }
 #performanceStatus .timer-long {
   gap: 5px;
