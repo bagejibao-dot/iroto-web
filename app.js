@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs6";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1404,13 +1404,13 @@
   function updateVisualMetronome() {
     if (!state.playing || !state.recording || !audio.ctx || !els.beatDot || els.performanceStatus.hidden) return;
     const time = performanceStatusState.beatTime;
-    const beat = performanceStatusState.beatIndex;
     const beatMs = 60000 / Math.max(1, state.bpm);
-    // One pulse per quarter-note beat (no double visual flash on beat 1).
-    const durationMs = Math.min(beat === 0 ? 140 : 90, beatMs * 0.40);
+    // nofs6: hold the red/white dot visibly ON, then hide it completely.
+    // 280 ms is shorter than the 375 ms beat at the current maximum 160 BPM.
+    // The proportional cap also leaves an OFF interval if faster BPM is added.
+    const durationMs = Math.min(280, beatMs * 0.75);
     const ageMs = time == null ? Infinity : (audio.ctx.currentTime - time) * 1000;
-    const life = ageMs >= 0 ? clamp(1 - ageMs / durationMs, 0, 1) : 0;
-    const opacity = String(Math.round(Math.pow(life, 0.55) * 1000) / 1000);
+    const opacity = ageMs >= 0 && ageMs < durationMs ? "1" : "0";
     if (opacity !== performanceStatusState.lastOpacity) {
       els.beatDot.style.setProperty("--beat-opacity", opacity);
       performanceStatusState.lastOpacity = opacity;

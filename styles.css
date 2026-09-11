@@ -1578,9 +1578,9 @@ html, body, #app {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* A quiet white dot between beats, with the existing red/white pulse over it. */
-  background: rgba(245, 247, 255, 0.30);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
+  /* nofs6: keep the dot's layout slot, but no visible base or shadow while OFF. */
+  background: transparent;
+  box-shadow: none;
 }
 #performanceStatus #beatDot::after {
   content: "";
