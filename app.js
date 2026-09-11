@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs9";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -103,6 +103,7 @@
       compatMp4: "MP4 録画",
       compatMp4Note: "非対応時は WebM を自動使用します",
       compatPwaNote: "ホーム画面への追加に使用します",
+      recordingInitFailed: "録画を開始できませんでした。もう一度お試しください。",
       recordingUnsupported: "現在のブラウザは Canvas 録画に対応していません。Chrome / Edge / Safari の新しいバージョンを試してください。"
     },
     zh: {
@@ -163,6 +164,7 @@
       compatMp4: "MP4 录制",
       compatMp4Note: "不支持时自动用 WebM",
       compatPwaNote: "用于安装到主屏幕",
+      recordingInitFailed: "录制失败，请重试。",
       recordingUnsupported: "当前浏览器不支持 Canvas 录制。请尝试 Chrome / Edge / Safari 新版本。"
     },
     en: {
@@ -223,6 +225,7 @@
       compatMp4: "MP4 Recording",
       compatMp4Note: "Automatically uses WebM if unsupported",
       compatPwaNote: "Used for adding to home screen",
+      recordingInitFailed: "Recording failed. Please try again.",
       recordingUnsupported: "This browser does not support Canvas recording. Try a newer version of Chrome / Edge / Safari."
     }
   };
@@ -1766,6 +1769,30 @@
     return blob;
   }
 
+  function getRecordingBitrateOptions(width, height) {
+    // nofs10: preserve the existing ~1080p canvas and captureStream(60).
+    // Both platforms use the same pixel-based target; bitrate is an encoder
+    // hint, not a guarantee about output size or a hard upper bound.
+    const pixels = Math.max(1, Number(width) * Number(height) || 1920 * 1080);
+    const videoBitsPerSecond = Math.round(
+      clamp(6_000_000 * pixels / (1920 * 1080), 2_500_000, 6_000_000) / 100_000
+    ) * 100_000;
+    return { videoBitsPerSecond, audioBitsPerSecond: 192_000 };
+  }
+
+  function updateRecordedMimeType(mime) {
+    if (typeof mime !== "string" || !mime.trim()) return;
+    const type = mime.split(";", 1)[0].trim().toLowerCase();
+    // Retain the browser's actual codec string. Never disguise WebM as MP4.
+    if (type === "video/mp4") {
+      state.recordedMime = mime;
+      state.recordedExt = "mp4";
+    } else if (type === "video/webm") {
+      state.recordedMime = mime;
+      state.recordedExt = "webm";
+    }
+  }
+
   function startRecording() {
     if (!setupRecordingCanvas() || !recordingCanvas.captureStream || !window.MediaRecorder || !audio.recorderDest) {
       alert(t("recordingUnsupported"));
@@ -1781,36 +1808,94 @@
     }
 
     const { mime, ext } = chooseMimeType();
-    const options = mime ? { mimeType: mime, videoBitsPerSecond: 8_000_000, audioBitsPerSecond: 192_000 } : {};
+    const bitrates = getRecordingBitrateOptions(recordingCanvas.width, recordingCanvas.height);
+    // Keep a bitrate target even when the browser chooses its own format.
+    const options = mime ? { mimeType: mime, ...bitrates } : { ...bitrates };
     state.recordedChunks = [];
     state.recordedMime = mime || "video/webm";
     state.recordedExt = ext;
+    let recorder;
+    const chunks = state.recordedChunks;
+    let failed = false;
+    const details = {
+      width: recordingCanvas.width,
+      height: recordingCanvas.height,
+      requestedFrameRate: 60,
+      requestedMime: mime || "browser default",
+      requestedVideoBitsPerSecond: bitrates.videoBitsPerSecond,
+      requestedAudioBitsPerSecond: bitrates.audioBitsPerSecond
+    };
+    const releaseVideoTracks = () => {
+      // Only the canvas tracks belong to this take. The shared Web Audio
+      // destination track is needed for subsequent recordings.
+      for (const track of stream.getVideoTracks()) track.stop();
+    };
+    const failRecording = err => {
+      if (failed) return;
+      failed = true;
+      console.warn("Iroto recording failed", err);
+      if (recorder) {
+        // Suppress final save UI for a take that could not start/encode.
+        recorder.ondataavailable = null;
+        recorder.onstop = null;
+        recorder.onerror = null;
+        try { if (recorder.state !== "inactive") recorder.stop(); } catch (_) { /* release below */ }
+      }
+      releaseVideoTracks();
+      state.recording = false;
+      state.recordArmed = false;
+      state.recorder = null;
+      state.recordedChunks = [];
+      stopRecordingTimer();
+      updateRecordButton();
+      alert(t("recordingInitFailed"));
+    };
 
     try {
-      state.recorder = new MediaRecorder(stream, options);
+      recorder = new MediaRecorder(stream, options);
+      state.recorder = recorder;
+      updateRecordedMimeType(recorder.mimeType);
+      recorder.onstart = () => {
+        updateRecordedMimeType(recorder.mimeType);
+        details.reportedVideoBitsPerSecond = recorder.videoBitsPerSecond;
+        details.reportedAudioBitsPerSecond = recorder.audioBitsPerSecond;
+      };
+      recorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+          // Blob type can be more specific than the requested MIME type.
+          updateRecordedMimeType(e.data.type || recorder.mimeType);
+        }
+      };
+      recorder.onerror = e => failRecording(e.error || e);
+      recorder.onstop = async () => {
+        releaseVideoTracks();
+        if (failed) return;
+        // ondataavailable precedes onstop; use the actual non-empty chunk type.
+        const typedChunk = chunks.find(chunk => chunk.type);
+        updateRecordedMimeType(typedChunk ? typedChunk.type : recorder.mimeType);
+        const rawBlob = new Blob(chunks, { type: state.recordedMime });
+        state.recordedBlob = await finalizeRecordedBlob(rawBlob);
+        details.actualMime = state.recordedMime;
+        details.durationMs = state.recordingDurationMs;
+        details.bytes = state.recordedBlob.size;
+        details.averageTotalBitsPerSecond = details.durationMs > 0
+          ? Math.round(details.bytes * 8_000 / details.durationMs) : null;
+        // Local inspection only. No telemetry, upload, or new dialog layout.
+        console.info("Iroto recording details", details);
+        showSaveDialog();
+      };
+
+      state.recording = true;
+      state.recordingDurationMs = 0;
+      drawRecordingFrame();
+      recorder.start();
+      state.recordArmed = false;
+      startRecordingTimer();
+      updateRecordButton();
     } catch (err) {
-      console.warn(err);
-      alert("录制初始化失败。当前浏览器可能不支持该视频格式。");
-      return;
+      failRecording(err);
     }
-
-    state.recorder.ondataavailable = e => {
-      if (e.data && e.data.size > 0) state.recordedChunks.push(e.data);
-    };
-
-    state.recorder.onstop = async () => {
-      const rawBlob = new Blob(state.recordedChunks, { type: state.recordedMime });
-      state.recordedBlob = await finalizeRecordedBlob(rawBlob);
-      showSaveDialog();
-    };
-
-    state.recording = true;
-    state.recordingDurationMs = 0;
-    drawRecordingFrame();
-    state.recorder.start();
-    state.recordArmed = false;
-    startRecordingTimer();
-    updateRecordButton();
   }
 
   function stopRecording() {
@@ -2297,7 +2382,27 @@
     }
   }
 
+  function isTextEntryTarget(target) {
+    const el = target instanceof Element ? target : target && target.parentElement;
+    return !!(el && (el.isContentEditable || el.closest(
+      'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+    )));
+  }
+
+  function preventControlTextSelection(event) {
+    if (isTextEntryTarget(event.target)) return;
+    const el = event.target instanceof Element ? event.target : event.target && event.target.parentElement;
+    if (el && el.closest(
+      'button, .topbar, .bottombar, #stage, #sensorStatus, #performanceStatus, .logo-img'
+    )) event.preventDefault();
+  }
+
   function wireEvents() {
+    // nofs10: cancel native text operations, not the gestures that activate UI.
+    for (const name of ["selectstart", "contextmenu", "dragstart"]) {
+      document.addEventListener(name, preventControlTextSelection, true);
+    }
+
     els.saveNameInput.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -2372,6 +2477,8 @@
     });
 
     window.addEventListener("keydown", e => {
+      // Filename editing/selecting must not trigger the page's Back shortcut.
+      if (e.defaultPrevented || isTextEntryTarget(e.target) || document.querySelector("dialog[open]")) return;
       if (e.key === "Escape" || e.key === "Backspace") {
         if (state.image) {
           e.preventDefault();

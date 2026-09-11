@@ -1,41 +1,50 @@
-# nofs9 检查记录
+# nofs10 检查记录
 
-## 源码边界
+## 源码范围
 
-- `node --check app.js` 通过。
-- 与 nofs8 的 118 个既有具名函数比较，116 个逐字相同。只修改 ensureAudio 和 stopPlaying，并新增 configurePlaybackAudioSession / restorePlaybackAudioSession。
-- ensureAudio 中原有的音频图创建、增益数值、振荡器和录制音轨连接保持原代码，外部添加会话设置及失败时恢复。
-- stopPlaying 仅在末尾增加恢复会话类型的调用。
-- 另有版本常量更新。移除这两段修改和新增辅助代码、还原版本常量后，app.js 与 nofs8 完全一致。
-- HTML 仅 nofs8 → nofs9 版本替换。CSS、SVG、三张 PNG、manifest、sw.js 逐字节一致。
-- CSS SHA-256：b2d9fad23af88c70fc798ac8f1fbaefa772530c3b2f895bcbbe1a63fa7a4baa1。
-- 没有将测试接口、模拟对象、截图或录制样本放入发布包。
+- node --check app.js 通过；与 nofs9 对比，120 个既有顶层具名函数中 118 个逐字一致。
+- 修改 startRecording（码率、真实 MIME、日志和错误/视频轨道清理）和 wireEvents（防选字事件与编辑框快捷键排除）。新增四个辅助函数：getRecordingBitrateOptions, updateRecordedMimeType, isTextEntryTarget, preventControlTextSelection。
+- 录制格式优先级 chooseMimeType、画布尺寸、captureStream(60)、声音与音频会话、传感器、准星、节拍/振动、显示/隐藏、旋转函数均逐字一致。
+- CSS仅增加自动文字缩放规则及限定范围的防选字规则，没有更改任何尺寸、颜色、位置或响应式断点。HTML仅 nofs9→nofs10 资源/版本更新。
+- SVG、三张PNG、manifest、sw.js逐字节不变。测试接口、日志样本、截图及模拟代码未放入发布包。
 
-## 独立音频会话测试
+## 本地受控检查
 
-在 Node vm 中提取实际新增辅助函数和 ensureAudio，用可控对象做 30 项断言：
+Node 的实际码率/MIME 辅助函数测试 42 项通过。包括横竖同画幅码率一致、最小/最大码率、无效 MIME 忽略、MP4/WebM真实类型保留。
 
-- 页面加载不改变会话类型；创建和恢复音频上下文之前设置 playback。
-- 多次初始化调用不重复重设类型，停止释放与再次开始行为正确。
-- 原类型为 auto / ambient / transient / playback 时，结束后恢复原值；已是 playback 时不擅自改回 auto。
-- 接口不存在、getter 抛错、setter 拒绝、setter 忽略设置：音频原流程均继续。
-- 音频构建或 resume 失败：尝试恢复原会话类型，仍抛出原错误。
-- 期间会话类型被其他代码改变时，停止不覆盖其新值。
+Chromium 144.0.7559.96，使用离线 HTML/CSS/JS 注入；通过临时测试接口观察状态。iPhone/Android用户代理和方向/音频会话均为测试条件，不是真实操作系统。
 
-## 本地 Chromium 检查
+- 6种视口×中日英三语，18组横竖往返：回到原方向时，浏览器推荐文字的computed font-size、line-height和DOM宽高与切换前相同；继承text-size-adjust:100%。该测试验证规则/回归，不复现Safari真实文字膨胀算法。
+- 顶部/底部按钮、BPM、播放/停止、回正等防选字样式生效；selectstart/contextmenu/dragstart对非编辑控件取消，对原生语言select及文件名编辑框不取消。
+- 真实鼠标长按BPM重复调整、保持UI显示且无文本选中。未实际测试iOS原生长按菜单。
+- 保存名称默认全选后Backspace删空、保留演奏图片和弹窗；可中间删字、全选替换。删除后contenteditable保留一个空br是浏览器行为，不视为可见文字。
+- 照片按钮仍打开accept=image/*的原输入，未添加capture或新的来源限制。
+- 模拟 MediaRecorder 构造、start同步、异步error三种失败，均取消录制状态并释放本次视频轨道，保持共享音频轨道live，无错误后保存窗口。
+- 真实MP4及强制WebM候选分支录制下载通过；两种文件由ffprobe读到视频和音频轨道。
+- 录制中旋转后计时起点与录制画布不变；停止重播声音上下文正常；全屏申请次数为0。Audio Session测试替身停止后恢复auto。
+- 本次完成的各测试没有未捕获脚本异常/Promise拒绝。原程序其他潜在问题没有宣称一并修复。
 
-Chromium 144.0.7559.96。当前环境限制网页导航，因此采用离线 HTML/CSS/JS 注入；音频会话接口是测试替身，Web Audio 和 MediaRecorder 使用真实浏览器实现。
+## 同图、同轨迹本地对比
 
-共 6 种接口条件：缺失、支持、原先已是 playback、setter 拒绝、getter 抛错、忽略设置。分别执行三语切换、选图、播放、停止、重播和返回首页；接口异常没有阻塞播放，未观察到未捕获脚本异常或 Promise 拒绝。
+两次录制使用同一张1440×1080测试图，以及相同的按时间生成的轨迹。真实运行时长及捕获帧数略不同，因此按单位时长比较，而不是仅比较总字节数。
 
-支持的模拟接口在播放时为 playback，停止/返回后恢复 auto；原先已经为 playback 的情况不做多余修改。进入首页与选图时没有设置调用。全屏申请次数为 0，图片选择保持 image/*、无 capture。
+| 项目 | nofs9 | nofs10 |
+|---|---:|---:|
+| 请求视频码率 | 8,000,000 bps | 4,500,000 bps |
+| 输出尺寸 | 1440×1080 | 1440×1080 |
+| 视频/音频 | VP9 / Opus，MP4容器 | VP9 / Opus，MP4容器 |
+| 文件字节数 | 1331392 | 1087495 |
+| ffprobe时长 | 4.734188 s | 4.829042 s |
+| 平均总码率 | 2249833 bps | 1801591 bps |
 
-在支持的模拟接口下，实际进行 Web Audio + MediaRecorder 录制，视口从 390×780 改为 844×390，录制计时起点和画布大小保持。停止后计时框隐藏、保存窗口出现，下载正常完成。
+本地样本的平均总码率约减少 19.9%。这不是 Android / iPhone 两台设备的对比，也不是固定节省比例。
 
-输出样本 green.mp4：139518 字节、约 3.0265 秒、1440×1080，含 VP9 视频与 Opus 音频。文件扩展名和编码选择沿用现有程序。ffmpeg 检查音频平均电平约 -15.5 dB、峰值约 -2.5 dB，确认样本不是静音音轨。这不证明 iPhone 扬声器已绕开静音开关。
+**性能限制：** 虽然两次captureStream都请求60fps，此离线软件绘制/编码环境中ffprobe实际平均帧率仅约8.6–8.8fps。该样本适用于录制流程、格式、相同环境下目标码率效果的有限检查，不能用于证明手机上的60fps性能、最终画质或高运动画面的压缩质量。
 
-## 限制
+## 未覆盖
 
-没有实体 iPhone/iPad Safari、系统静音开关、动作按钮、扬声器、蓝牙路由、其他媒体应用竞争或系统中断测试。Chrome 模拟接口的 setter 成功不能证明实际 WebKit 音频会话已经采用同样路由。
+没有实体Safari/iPhone的原生选字、真正自动字体膨胀、iOS照片菜单、静音开关或手机硬件编码测试；没有用户两端的原视频，不能查明差异的唯一根因。没有新增麦克风权限、摄像头或网络上传。请以实机同图、同BPM、同时间长度的录制结果作为最终判断。
 
-没有重测所有历史界面和功能；本版只处理音频会话类型，不宣称消除其他潜在问题。
+## 实现依据
+
+Apple《Customizing Style Sheets》中text-size-adjust说明；Apple Safari CSS Reference中的user-select/touch-callout；W3C MediaStream Recording对bitrate hint与actual MIME的定义。浏览器的码率报告也不等于通过文件计算出的平均实际码率。
