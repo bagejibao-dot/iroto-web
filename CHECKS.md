@@ -1,36 +1,41 @@
-# nofs8 检查记录
+# nofs9 检查记录
 
-## 源码范围
+## 源码边界
 
 - `node --check app.js` 通过。
-- 与 nofs7 对比，115 个既有具名函数逐字一致。
-- 修改 applyLanguage / loadFile / wireEvents，仅用于恢复选图文案和原来的图片导入方式。
-- 删除 nofs7 专门为 iOS Files 入口增加的 USE_IOS_FILE_PICKER 常量、两组翻译键及 configurePhotoFilePicker / isImageFileCandidate 辅助函数。
-- JavaScript 在忽略版本常量后，与 nofs6 完全一致。这是对 nofs7 图片入口改动的准确撤回；并非使用旧版样式。
-- styles.css 与 nofs7 逐字节一致，保留其数字字形垂直对齐修正。CSS SHA-256：`b2d9fad23af88c70fc798ac8f1fbaefa772530c3b2f895bcbbe1a63fa7a4baa1`。
-- HTML 只更新 nofs7 → nofs8 资源查询版本和版本文字；其 file input 保持 image/*、无 capture。
-- SVG、三张 PNG、manifest 和 sw.js 与 nofs7 逐字节一致。
-- 测试接口、模拟代码、截图和样本视频未放入发布包。
+- 与 nofs8 的 118 个既有具名函数比较，116 个逐字相同。只修改 ensureAudio 和 stopPlaying，并新增 configurePlaybackAudioSession / restorePlaybackAudioSession。
+- ensureAudio 中原有的音频图创建、增益数值、振荡器和录制音轨连接保持原代码，外部添加会话设置及失败时恢复。
+- stopPlaying 仅在末尾增加恢复会话类型的调用。
+- 另有版本常量更新。移除这两段修改和新增辅助代码、还原版本常量后，app.js 与 nofs8 完全一致。
+- HTML 仅 nofs8 → nofs9 版本替换。CSS、SVG、三张 PNG、manifest、sw.js 逐字节一致。
+- CSS SHA-256：b2d9fad23af88c70fc798ac8f1fbaefa772530c3b2f895bcbbe1a63fa7a4baa1。
+- 没有将测试接口、模拟对象、截图或录制样本放入发布包。
+
+## 独立音频会话测试
+
+在 Node vm 中提取实际新增辅助函数和 ensureAudio，用可控对象做 30 项断言：
+
+- 页面加载不改变会话类型；创建和恢复音频上下文之前设置 playback。
+- 多次初始化调用不重复重设类型，停止释放与再次开始行为正确。
+- 原类型为 auto / ambient / transient / playback 时，结束后恢复原值；已是 playback 时不擅自改回 auto。
+- 接口不存在、getter 抛错、setter 拒绝、setter 忽略设置：音频原流程均继续。
+- 音频构建或 resume 失败：尝试恢复原会话类型，仍抛出原错误。
+- 期间会话类型被其他代码改变时，停止不覆盖其新值。
 
 ## 本地 Chromium 检查
 
-浏览器：Chromium 144.0.7559.96。本地 URL 导航受运行环境限制，使用离线 HTML/CSS/JS 注入测试；临时公开只用于测试的状态接口，交付代码不包含这些接口。
+Chromium 144.0.7559.96。当前环境限制网页导航，因此采用离线 HTML/CSS/JS 注入；音频会话接口是测试替身，Web Audio 和 MediaRecorder 使用真实浏览器实现。
 
-本轮 183 项重复断言通过，属于有限的导入与录制冒烟检查，不是全部功能或全部浏览器的覆盖。
+共 6 种接口条件：缺失、支持、原先已是 playback、setter 拒绝、getter 抛错、忽略设置。分别执行三语切换、选图、播放、停止、重播和返回首页；接口异常没有阻塞播放，未观察到未捕获脚本异常或 Promise 拒绝。
 
-- 模拟 iPhone、iPad、iPadOS 桌面用户代理、Android、桌面五种用户代理/触摸条件。它们全部使用 Chromium，不是五种真实系统。
-- 每种环境分别切换日语、中文、英文：选择按钮和替换按钮恢复照片文案；accept 始终为 image/*，没有 capture。
-- 点击首页选择和演奏页替换按钮会触发同一个 file input；注入测试文件可正常显示照片。
-- 取消以空文件结果模拟：不清空原图。重新选择同一张照片可导入。
-- JPEG、PNG、WebP 以及空/通用 MIME 的图片通过原解码路径。损坏 JPEG 和 PDF 弹出原读取失败提示，旧图保留；错误后再次选择可继续。
-- 演奏中替换照片按原规则先停止，再打开选择入口；未录制时没有常驻视觉节拍器。
-- 实际录制过程中检查 390×780、844×390、640×280，控制栏显示和隐藏各一次：时间与圆点垂直中心偏差小于 1 CSS px；文字在胶囊内部，text-box-trim: trim-both 和 blur(10px) 保持。
-- 改变视口尺寸后录制继续，计时正常增长；停止后提示层隐藏、保存窗口正常出现。
-- 实际 Web Audio / MediaRecorder 下载完成。样本为 photo_green.mp4，168511 字节；ffprobe 读取到 1440×1080 视频轨道与音频轨道，时长约 4.143 秒。
-- 全部页面全屏申请次数为 0；没有观察到未捕获脚本异常或 Promise 拒绝。
+支持的模拟接口在播放时为 playback，停止/返回后恢复 auto；原先已经为 playback 的情况不做多余修改。进入首页与选图时没有设置调用。全屏申请次数为 0，图片选择保持 image/*、无 capture。
 
-## 尚未验证
+在支持的模拟接口下，实际进行 Web Audio + MediaRecorder 录制，视口从 390×780 改为 844×390，录制计时起点和画布大小保持。停止后计时框隐藏、保存窗口出现，下载正常完成。
 
-没有实体 iPhone/iPad Safari 或 Android 手机测试；本地 filechooser 事件与文件注入不证明原生菜单实际显示哪些项目。没有验证照片权限交互、Safari HEIC 等格式解码、真实传感器、硬件触觉或全部浏览器版本。
+输出样本 green.mp4：139518 字节、约 3.0265 秒、1440×1080，含 VP9 视频与 Opus 音频。文件扩展名和编码选择沿用现有程序。ffmpeg 检查音频平均电平约 -15.5 dB、峰值约 -2.5 dB，确认样本不是静音音轨。这不证明 iPhone 扬声器已绕开静音开关。
 
-未重新测试所有已有功能，也未改变其它已知或潜在问题。
+## 限制
+
+没有实体 iPhone/iPad Safari、系统静音开关、动作按钮、扬声器、蓝牙路由、其他媒体应用竞争或系统中断测试。Chrome 模拟接口的 setter 成功不能证明实际 WebKit 音频会话已经采用同样路由。
+
+没有重测所有历史界面和功能；本版只处理音频会话类型，不宣称消除其他潜在问题。

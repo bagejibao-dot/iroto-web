@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs8";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs9";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -857,37 +857,86 @@
     drawCursorOn(ctx, state.imageRect, cursorRadius() * 0.98, Math.max(1.2, els.canvas.width / window.innerWidth * 1.2));
   }
 
-  async function ensureAudio() {
-    if (audio.ctx) {
-      if (audio.ctx.state !== "running") await audio.ctx.resume();
-      return;
+  // Override only while the user is performing. Do not select an audio
+  // category on page load, or add a hidden/looping media element.
+  const playbackSessionOverride = { session: null, previousType: null };
+
+  function configurePlaybackAudioSession() {
+    try {
+      const session = navigator.audioSession;
+      if (!session) return false;
+
+      const previousType = session.type;
+      if (previousType !== "playback") {
+        // WebKit's playback category allows Web Audio to behave like media
+        // playback under the iPhone Silent switch. Feature-detect, not UA-sniff.
+        session.type = "playback";
+        if (session.type !== "playback") return false;
+        if (!playbackSessionOverride.session) {
+          playbackSessionOverride.session = session;
+          playbackSessionOverride.previousType = previousType;
+        }
+      }
+      return true;
+    } catch (err) {
+      // Missing, restricted or rejected APIs must not prevent normal audio.
+      console.warn("Iroto: playback audio session unavailable", err);
+      return false;
     }
+  }
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) throw new Error("Web Audio API is not supported.");
+  function restorePlaybackAudioSession() {
+    const { session, previousType } = playbackSessionOverride;
+    playbackSessionOverride.session = null;
+    playbackSessionOverride.previousType = null;
+    if (!session) return;
 
-    audio.ctx = new AudioContext();
-    audio.master = audio.ctx.createGain();
-    audio.master.gain.value = 0.85;
-    audio.master.connect(audio.ctx.destination);
+    try {
+      // Do not overwrite a category changed by somebody else in the meantime.
+      if (session.type === "playback") session.type = previousType || "auto";
+    } catch (err) {
+      console.warn("Iroto: could not restore audio session", err);
+    }
+  }
 
-    audio.recorderDest = audio.ctx.createMediaStreamDestination();
-    audio.master.connect(audio.recorderDest);
+  async function ensureAudio() {
+    configurePlaybackAudioSession();
+    try {
+      if (audio.ctx) {
+        if (audio.ctx.state !== "running") await audio.ctx.resume();
+        return;
+      }
 
-    audio.melodyGain = audio.ctx.createGain();
-    audio.melodyGain.gain.value = 0.0001;
-    audio.melodyGain.connect(audio.master);
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) throw new Error("Web Audio API is not supported.");
 
-    audio.melodyOsc1 = audio.ctx.createOscillator();
-    audio.melodyOsc2 = audio.ctx.createOscillator();
-    audio.melodyOsc1.type = "sine";
-    audio.melodyOsc2.type = "triangle";
-    audio.melodyOsc1.connect(audio.melodyGain);
-    audio.melodyOsc2.connect(audio.melodyGain);
-    audio.melodyOsc1.start();
-    audio.melodyOsc2.start();
+      audio.ctx = new AudioContext();
+      audio.master = audio.ctx.createGain();
+      audio.master.gain.value = 0.85;
+      audio.master.connect(audio.ctx.destination);
 
-    audio.noiseBuffer = makeNoiseBuffer(audio.ctx);
+      audio.recorderDest = audio.ctx.createMediaStreamDestination();
+      audio.master.connect(audio.recorderDest);
+
+      audio.melodyGain = audio.ctx.createGain();
+      audio.melodyGain.gain.value = 0.0001;
+      audio.melodyGain.connect(audio.master);
+
+      audio.melodyOsc1 = audio.ctx.createOscillator();
+      audio.melodyOsc2 = audio.ctx.createOscillator();
+      audio.melodyOsc1.type = "sine";
+      audio.melodyOsc2.type = "triangle";
+      audio.melodyOsc1.connect(audio.melodyGain);
+      audio.melodyOsc2.connect(audio.melodyGain);
+      audio.melodyOsc1.start();
+      audio.melodyOsc2.start();
+
+      audio.noiseBuffer = makeNoiseBuffer(audio.ctx);
+    } catch (err) {
+      // Preserve the previous error path without leaving an exclusive category.
+      restorePlaybackAudioSession();
+      throw err;
+    }
   }
 
   function makeNoiseBuffer(ac) {
@@ -1336,6 +1385,7 @@
     if (state.recording) stopRecording();
     state.recordArmed = false;
     updateRecordButton();
+    restorePlaybackAudioSession();
   }
 
   function chooseMimeType() {
