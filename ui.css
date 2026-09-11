@@ -88,10 +88,12 @@
   text-align: center; margin: 0; min-width: 0; overflow-wrap: anywhere;
 }
 .ui-close {
+  appearance: none; -webkit-appearance: none;
   display: grid; place-items: center;
   width: 44px; height: 44px; padding: 0;
   border: 1px solid var(--ui-line); border-radius: 50%;
   background: var(--ui-soft); color: #fff;
+  outline: none; box-shadow: none;
   touch-action: manipulation;
 }
 .ui-close:active { background: rgba(255,255,255,.16); }
@@ -137,7 +139,10 @@
 .ui-action-danger { color: #ff8585; border-color: rgba(255,116,116,.6); background: rgba(255,94,94,.055); }
 .ui-action:active { background: rgba(255,255,255,.2); }
 .ui-action-danger:active { background: rgba(255,94,94,.16); }
-.ui-action:focus-visible, .ui-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.ui-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* nofs14: keep one thin circle on X, including autofocus/keyboard focus.
+   Highlight the existing border instead of drawing a second outer ring. */
+.ui-close:focus-visible { border-color: rgba(255,255,255,.8); }
 .save-sheet { width: min(100%, 460px); }
 .save-sheet .ui-dialog-header { display: block; padding: 18px; }
 .save-sheet .ui-dialog-header h2 { text-align: left; }
