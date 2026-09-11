@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs12";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs13";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -520,7 +520,7 @@
   }
 
   function helpSymbol(name) {
-    if (name === "play") return "<svg class=\"help-play-glyph\" viewBox=\"0 0 32 20\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 3 14 10 3 17Z\" fill=\"currentColor\"/><rect x=\"21\" y=\"5\" width=\"10\" height=\"10\" rx=\"1\" fill=\"currentColor\"/></svg>";
+    if (name === "play") return "<svg class=\"help-play-glyph\" viewBox=\"0 0 34 20\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 4 11 10 3 16Z\" fill=\"currentColor\"/><path class=\"help-play-divider\" d=\"M19 3 15 17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\"/><rect x=\"23\" y=\"6\" width=\"8\" height=\"8\" rx=\".8\" fill=\"currentColor\"/></svg>";
     if (name === "recenter") return RECENTER_SVG;
     if (name === "tap") return "<svg class=\"ui-glyph\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12V5.5a1.5 1.5 0 0 1 3 0V10l5 1.5a3 3 0 0 1 2 2.8V16c0 3-2.5 5-5.5 5H12a4 4 0 0 1-3.2-1.6L5 14.5a1.5 1.5 0 0 1 2.1-2.1L9 14\"/><path d=\"M5 6H3m5-4L7 1m8 4 2-1\"/></svg>";
     const symbols = { photo: "▧", bpm: "− / ＋", record: "○", timer: "00:12" };
@@ -545,10 +545,18 @@
   function syncDialogViewport() {
     dialogUi.layoutFrame = 0;
     const viewport = window.visualViewport;
-    const width = Math.max(1, viewport ? viewport.width : window.innerWidth);
-    const height = Math.max(1, viewport ? viewport.height : window.innerHeight);
-    const left = viewport ? viewport.offsetLeft : 0;
-    const top = viewport ? viewport.offsetTop : 0;
+    // nofs13: a keyboard/rotation notification can briefly carry stale viewport
+    // bounds. Size only the dialogs, cap to the current layout viewport, and do
+    // not multiply/divide the page by visualViewport.scale or rewrite meta zoom.
+    const positive = (value, fallback) => Number.isFinite(value) && value > 0 ? value : fallback;
+    const layoutWidth = positive(document.documentElement.clientWidth, positive(window.innerWidth, 1));
+    const layoutHeight = positive(document.documentElement.clientHeight, positive(window.innerHeight, 1));
+    const width = Math.min(layoutWidth, positive(viewport && viewport.width, layoutWidth));
+    const height = Math.min(layoutHeight, positive(viewport && viewport.height, layoutHeight));
+    const left = clamp(viewport && Number.isFinite(viewport.offsetLeft) ? viewport.offsetLeft : 0,
+      0, Math.max(0, layoutWidth - width));
+    const top = clamp(viewport && Number.isFinite(viewport.offsetTop) ? viewport.offsetTop : 0,
+      0, Math.max(0, layoutHeight - height));
     for (const dialog of [els.helpDialog, els.saveDialog, els.discardDialog]) {
       if (!dialog) continue;
       dialog.dataset.compact = height < 360 ? "true" : "false";

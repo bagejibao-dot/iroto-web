@@ -6,6 +6,23 @@
   --ui-copy: #f5f7ff;
   --ui-muted: #b8bfcc;
 }
+/* nofs13: retain native language selection but avoid small form-control text.
+   Keep the pill's original dimensions and alignment; do not scale the select. */
+#langSelect {
+  font-size: 16px !important;
+  line-height: normal;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+/* Do not let repeated taps on app controls invoke double-tap zoom.
+   Pinch zoom/scrolling remain available; the filename retains text selection. */
+.topbar, .bottombar, #emptyState,
+#playBtn, #sensorBtn {
+  touch-action: manipulation;
+}
+
 #emptyState { background: linear-gradient(180deg, #0b1020, #05070b); }
 #choosePhotoBtn {
   background: rgba(10,14,22,.65);
@@ -187,10 +204,10 @@
   user-select: none; -webkit-user-select: none;
 }
 .help-symbol.type-bpm, .help-symbol.type-timer { font-size: 12px; }
-/* nofs12: the play/stop pair fits within the unchanged help circle. */
+/* nofs13: small play / stop symbols and a slash inside the unchanged circle. */
 .help-symbol.type-play { font-size: 0; }
 .help-symbol.type-play > .help-play-glyph {
-  display: block; width: 28px; height: 18px;
+  display: block; width: 30px; height: 20px;
   fill: currentColor; stroke: none; pointer-events: none;
 }
 .help-control h4 { margin: 0 0 4px; font-size: 14px; line-height: 1.4; color: #fff; }
