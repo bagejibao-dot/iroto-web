@@ -8,13 +8,14 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Iroto Web</title>
-  <link rel="icon" type="image/svg+xml" href="iroto-logo.svg?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10" />
+  <link rel="icon" type="image/svg+xml" href="iroto-logo.svg?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
 
 
-  <link rel="manifest" href="manifest.webmanifest?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10" />
-  <link rel="stylesheet" href="styles.css?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10" />
+  <link rel="manifest" href="manifest.webmanifest?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
+  <link rel="stylesheet" href="styles.css?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
+  <link rel="stylesheet" href="ui.css?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11" />
 </head>
 <body>
   <div id="app">
@@ -28,7 +29,7 @@
         <span id="appTitle">Iroto Web</span>
         <span id="fileName" class="file-name">写真未選択</span>
       </div>
-      <button id="helpBtn" class="icon-btn" type="button" aria-label="互換性">?</button>
+      <button id="helpBtn" class="icon-btn" type="button" aria-label="使い方">?</button>
     </header>
 
     <main class="stage-wrap">
@@ -58,7 +59,7 @@
     </footer>
 
     <div id="sensorStatus" class="sensor-status hidden" aria-hidden="true">センサー</div>
-    <button id="sensorBtn" class="recenter-btn hidden" type="button" title="センサーを有効化 / 再センター">⌖</button>
+    <button id="sensorBtn" class="recenter-btn hidden" type="button" title="姿勢をリセット" aria-label="姿勢をリセット"><svg class="ui-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
     <button id="playBtn" class="play-btn hidden" type="button" aria-label="再生">▶</button>
     <!-- One recording-only timer with an inline beat dot. Not part of the video canvas. -->
     <div id="performanceStatus" data-controls-visible="true" hidden>
@@ -72,36 +73,55 @@
 
     <input id="fileInput" type="file" accept="image/*" hidden />
 
-    <dialog id="saveDialog" class="dialog">
-      <form method="dialog" class="dialog-card">
-        <h2>演奏動画を保存</h2>
-        <p id="recordInfo">録画が完了しました。</p>
-        <label class="input-label">
-          ファイル名
-          <div id="saveNameInput" class="filename-edit" contenteditable="true" role="textbox" aria-label="filename" spellcheck="false" autocorrect="off" autocapitalize="off" translate="no">Iroto</div>
-        </label>
-        <div class="dialog-actions">
-          <button id="discardBtn" class="secondary-btn" value="discard" type="button">削除</button>
-          <button id="saveBtn" class="primary-btn" value="save" type="button">保存</button>
+    <dialog id="saveDialog" class="ui-dialog" aria-labelledby="saveTitle">
+      <form method="dialog" class="ui-sheet save-sheet">
+        <header class="ui-dialog-header"><h2 id="saveTitle" tabindex="-1">演奏動画を保存</h2></header>
+        <div class="ui-dialog-body" id="saveBody">
+          <p id="recordInfo">録画が完了しました。</p>
+          <div class="ui-field">
+            <label id="saveNameLabel" class="ui-field-label">ファイル名</label>
+            <div id="saveNameInput" class="ui-filename" contenteditable="true" role="textbox"
+              aria-labelledby="saveNameLabel" aria-multiline="false" spellcheck="false"
+              autocorrect="off" autocapitalize="off" autocomplete="off" translate="no"
+              inputmode="text" enterkeyhint="done">Iroto</div>
+          </div>
+          <p id="saveHint">名前を変更して保存できます。拡張子は自動で付きます。</p>
         </div>
+        <footer class="ui-footer ui-footer-actions">
+          <button id="discardBtn" class="ui-action ui-action-danger" type="button">削除</button>
+          <button id="saveBtn" class="ui-action ui-action-primary" type="button">保存</button>
+        </footer>
       </form>
     </dialog>
 
-    <dialog id="compatDialog" class="dialog">
-      <form method="dialog" class="dialog-card compat-card">
-        <h2>互換性チェック</h2>
-        <div id="compatList" class="compat-list"></div>
-        <p id="compatVersion" class="version-label">v2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10</p>
-        <p class="hint">
-          センサー機能は通常 HTTPS が必要です。録画形式はブラウザに応じて MP4 または WebM が自動選択されます。
-        </p>
-        <div class="dialog-actions">
-          <button class="primary-btn" value="ok">閉じる</button>
+    <dialog id="discardDialog" class="ui-dialog" aria-labelledby="discardTitle" aria-describedby="discardBody">
+      <div class="ui-sheet ui-confirm-sheet">
+        <div class="ui-dialog-body">
+          <h2 id="discardTitle">録画を削除しますか？</h2>
+          <p id="discardBody">この録画は保存されません。削除後は元に戻せません。</p>
         </div>
-      </form>
+        <footer class="ui-footer ui-footer-actions">
+          <button id="keepRecordingBtn" class="ui-action" type="button" autofocus>戻る</button>
+          <button id="confirmDiscardBtn" class="ui-action ui-action-danger" type="button">削除</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog id="helpDialog" class="ui-dialog" aria-labelledby="helpTitle">
+      <section class="ui-sheet help-sheet">
+        <header class="ui-dialog-header">
+          <button id="helpCloseBtn" class="ui-close" type="button" aria-label="閉じる" autofocus><svg class="ui-glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+          <h2 id="helpTitle">使い方</h2>
+          <span aria-hidden="true"></span>
+        </header>
+        <div class="ui-dialog-body" id="helpBody"></div>
+        <footer class="ui-footer version-footer">
+          <p id="helpVersion">v2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11</p>
+        </footer>
+      </section>
     </dialog>
   </div>
 
-  <script src="app.js?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10"></script>
+  <script src="app.js?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11"></script>
 </body>
 </html>

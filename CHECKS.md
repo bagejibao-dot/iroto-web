@@ -1,50 +1,80 @@
-# nofs10 检查记录
+# nofs11 检查记录
 
-## 源码范围
+## 基底及源码边界
 
-- node --check app.js 通过；与 nofs9 对比，120 个既有顶层具名函数中 118 个逐字一致。
-- 修改 startRecording（码率、真实 MIME、日志和错误/视频轨道清理）和 wireEvents（防选字事件与编辑框快捷键排除）。新增四个辅助函数：getRecordingBitrateOptions, updateRecordedMimeType, isTextEntryTarget, preventControlTextSelection。
-- 录制格式优先级 chooseMimeType、画布尺寸、captureStream(60)、声音与音频会话、传感器、准星、节拍/振动、显示/隐藏、旋转函数均逐字一致。
-- CSS仅增加自动文字缩放规则及限定范围的防选字规则，没有更改任何尺寸、颜色、位置或响应式断点。HTML仅 nofs9→nofs10 资源/版本更新。
-- SVG、三张PNG、manifest、sw.js逐字节不变。测试接口、日志样本、截图及模拟代码未放入发布包。
+- 基底：本对话中的 `Iroto_Web_logo_v3_browser_recording_metronome_nofs10.zip`，不是旧的全屏或加速度分支。
+- JavaScript 语法检查通过；原 124 个顶层具名函数中 117 个逐字相同。
+- 修改的原函数：applyLanguage（新帮助/保存文案与无障碍标签）、showSaveDialog（新弹窗入口与受保护的初次聚焦）、saveRecording（保存前失焦）、discardRecording（网页内删除确认）、requestSensor（仅将旧兼容性 UI 刷新改名为帮助 UI 刷新）、wireEvents（新帮助入口、IME Enter保护和粘贴换行处理）。
+- 原 updateCompatDialog 由 updateHelpDialog 替换；不再生成兼容性检查列表。
+- 34 个重点函数单独检查为逐字一致：绘制、取色映射、声音合成/会话、准星平滑、姿态/旋转、强弱拍、录制计时/编码/码率/画幅、导入照片等。没有把 help UI 的改动写进录制画布。
+- 新增 ui.css 使用 ui-dialog/ui-sheet 等独立类名；原 styles.css 逐字节保留。回正图标只用 #sensorBtn 的内部排版规则覆盖，按钮坐标与外圈尺寸不改。
+- 原 styles.css SHA-256：`6ffde448d62daf473a4384dd641f100f7928ff8323cc8c3e6bac0d7d547ea664`。
+- 原 SVG logo、PNG 三张图标、manifest、sw.js 均逐字节相同。
+- HTML 更新版本引用、增加 ui.css、替换回正符号、重构保存/帮助/删除确认 DOM。
+- 重复 HTML id 检查通过。脚本引用的 DOM id 均存在，helpLiveRecording 是明确动态生成的元素。
+- PostCSS 成功解析原样式及 ui.css。发布包不包含测试接口、模拟对象、测试照片、视频或测试脚本。
 
-## 本地受控检查
+## 本地浏览器与方法
 
-Node 的实际码率/MIME 辅助函数测试 42 项通过。包括横竖同画幅码率一致、最小/最大码率、无效 MIME 忽略、MP4/WebM真实类型保留。
+Chromium 144.0.7559.96（桌面 Linux 实现）。采用本地 HTML/CSS/JS 离线注入，临时暴露测试状态；模拟手机用户代理、触摸、屏幕方向、Audio Session 和 VisualViewport。Web Audio 和 MediaRecorder 使用浏览器真实实现。
 
-Chromium 144.0.7559.96，使用离线 HTML/CSS/JS 注入；通过临时测试接口观察状态。iPhone/Android用户代理和方向/音频会话均为测试条件，不是真实操作系统。
+没有可用的 WebKit 测试浏览器，安装下载亦未成功；没有将以下结果当成 iPhone Safari 或真实软键盘测试。
 
-- 6种视口×中日英三语，18组横竖往返：回到原方向时，浏览器推荐文字的computed font-size、line-height和DOM宽高与切换前相同；继承text-size-adjust:100%。该测试验证规则/回归，不复现Safari真实文字膨胀算法。
-- 顶部/底部按钮、BPM、播放/停止、回正等防选字样式生效；selectstart/contextmenu/dragstart对非编辑控件取消，对原生语言select及文件名编辑框不取消。
-- 真实鼠标长按BPM重复调整、保持UI显示且无文本选中。未实际测试iOS原生长按菜单。
-- 保存名称默认全选后Backspace删空、保留演奏图片和弹窗；可中间删字、全选替换。删除后contenteditable保留一个空br是浏览器行为，不视为可见文字。
-- 照片按钮仍打开accept=image/*的原输入，未添加capture或新的来源限制。
-- 模拟 MediaRecorder 构造、start同步、异步error三种失败，均取消录制状态并释放本次视频轨道，保持共享音频轨道live，无错误后保存窗口。
-- 真实MP4及强制WebM候选分支录制下载通过；两种文件由ffprobe读到视频和音频轨道。
-- 录制中旋转后计时起点与录制画布不变；停止重播声音上下文正常；全屏申请次数为0。Audio Session测试替身停止后恢复auto。
-- 本次完成的各测试没有未捕获脚本异常/Promise拒绝。原程序其他潜在问题没有宣称一并修复。
+## 响应式帮助 / 保存布局
 
-## 同图、同轨迹本地对比
+10 种 CSS 视口 × 日语、中文、英语，共 30 组：
+320×568、360×640、390×780、430×932、568×320、667×375、844×390、932×430、640×280、1024×768。
 
-两次录制使用同一张1440×1080测试图，以及相同的按时间生成的轨迹。真实运行时长及捕获帧数略不同，因此按单位时长比较，而不是仅比较总字节数。
+- 帮助窗口、关闭 X、标题和底部完整版本号均在可见边界内。
+- 帮助正文/嵌套卡片没有水平溢出；各卡片的图标与说明是独立网格列，没有用文字叠加图标。
+- 正文滚动到底时，关闭按钮和版本页脚不移动。
+- 七个代表色及其 C/D/E/F/G/A/B 音阶完整显示；用实际 mapHsvToMusic 对照代表色相验证为 [0,2,4,5,7,9,11]。
+- 保存窗口和删除确认窗口在相同视口下边界正确；文件名实际字号为16px。
+- 取消删除保留当前名称和录制；确认删除才清空本次录制。窗口外点击不会删除。
+- 对左右44/16、顶部28、底部20 CSS px 的安全边距作额外模拟检查。
+- VisualViewport 不存在的回退布局经过检查。
 
-| 项目 | nofs9 | nofs10 |
-|---|---:|---:|
-| 请求视频码率 | 8,000,000 bps | 4,500,000 bps |
-| 输出尺寸 | 1440×1080 | 1440×1080 |
-| 视频/音频 | VP9 / Opus，MP4容器 | VP9 / Opus，MP4容器 |
-| 文件字节数 | 1331392 | 1087495 |
-| ffprobe时长 | 4.734188 s | 4.829042 s |
-| 平均总码率 | 2249833 bps | 1801591 bps |
+## 文件名与键盘范围
 
-本地样本的平均总码率约减少 19.9%。这不是 Android / iPhone 两台设备的对比，也不是固定节省比例。
+4 种基础视口（390×780、844×390、320×568、640×280），各测试4组可见高度（320/240/200/160 CSS px，超过基础高度时使用可见高度上限），共16组模拟。
 
-**性能限制：** 虽然两次captureStream都请求60fps，此离线软件绘制/编码环境中ffprobe实际平均帧率仅约8.6–8.8fps。该样本适用于录制流程、格式、相同环境下目标码率效果的有限检查，不能用于证明手机上的60fps性能、最终画质或高运动画面的压缩质量。
+- 默认名称全选后，一次 Backspace 删除，不返回首页。
+- 中间插入、中文/日文和长名称可编辑；长名称在编辑区内部滚动，不撑宽整个弹窗。
+- IME 转换中的 Enter 不失焦；普通 Enter 收起焦点。
+- visual viewport 缩小/偏移时，保存动作与输入框保持可见；舞台 getBoundingClientRect 与键盘前一致。
+- 初轮200px高度测试发现输入框受挤压，已添加根据 VisualViewport 实际高度触发的紧凑布局，并重测至160px通过。
+- 收起模拟键盘后，弹窗恢复原高度，舞台几何值不变。
+- 模拟1.25倍缩放时不写 maximum-scale / user-scalable，也不通过整页 transform 抵消缩放。
+- 保存字段允许 selectstart；普通按钮的选字事件被取消。
+- 取消删除及 Escape 关闭确认后，保存窗口和名称保留。
 
-## 未覆盖
+这只验证尺寸、事件和页面样式恢复。没有复现 iOS 原生聚焦缩放、触摸选区拖动、真实键盘动画、原生粘贴菜单。
 
-没有实体Safari/iPhone的原生选字、真正自动字体膨胀、iOS照片菜单、静音开关或手机硬件编码测试；没有用户两端的原视频，不能查明差异的唯一根因。没有新增麦克风权限、摄像头或网络上传。请以实机同图、同BPM、同时间长度的录制结果作为最终判断。
+## 演奏 / 回正 / 录制
 
-## 实现依据
+- 非录制演奏不显示视觉计时节拍器。
+- 三种视口的 SVG 中心与回正按钮中心误差小于0.1 CSS px。
+- 真实录制中打开帮助继续录制，显示“录制仍在继续”提示；关闭后继续操作。
+- 从竖屏转横屏后，操作类型更新，录制起点及录制画布尺寸不变。
+- 停止后计时提示隐藏，出现深色保存窗口，音频会话测试对象恢复为 auto。
+- 命名、下载、重播、替换照片、返回首页流程通过。全屏申请次数为0。
+- 样本：Iroto_nofs11_test.mp4，282178字节，ffprobe时长约2.687秒，1440×1080，VP9视频 / Opus音频。
+- 本地样本实际平均视频帧率约50.32fps；这是有限的流程检查，不是手机60fps性能保证。
+- 上述最终检查未观察到页面未捕获脚本异常或 Promise 拒绝。
+- 已目视检查帮助、颜色说明、保存、删除确认、模拟键盘和演奏截图。
 
-Apple《Customizing Style Sheets》中text-size-adjust说明；Apple Safari CSS Reference中的user-select/touch-callout；W3C MediaStream Recording对bitrate hint与actual MIME的定义。浏览器的码率报告也不等于通过文件计算出的平均实际码率。
+## 限制
+
+未完成实体 iPhone/iPad Safari 或 Android 的测试，不能确认所有系统版本下键盘放大问题都已消失。真实触摸/选字、键盘收起后的 Safari 视口、传感器噪声、静音开关、照片图库、下载 UI、硬件振动和编码表现仍需实机验证。
+
+本轮不是全功能穷尽测试；没有声称修复其他既有程序问题。原生权限框、键盘、照片选择器及系统下载 UI 不由网页主题控制。
+
+## 实现参考
+
+VisualViewport 官方文档（可见视口可在键盘出现时缩小而布局视口不变）：
+`https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport`
+
+WebKit 问题265578（部分 Safari 情况下键盘动画结束才更新可见视口）：
+`https://bugs.webkit.org/show_bug.cgi?id=265578`
+
+WebKit 字体可读性缩放相关偏好定义及 source 输入框机制是本次避免继承13px编辑字号的参考；16px为该编辑区设置的保守值，不是对所有 Safari /辅助功能设置的保证。

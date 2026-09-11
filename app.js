@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs10";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -9,7 +9,6 @@
     topbar: document.querySelector(".topbar"),
     emptyState: document.getElementById("emptyState"),
     choosePhotoBtn: document.getElementById("choosePhotoBtn"),
-    cameraBtn: document.getElementById("cameraBtn"),
     photoBtn: document.getElementById("photoBtn"),
     fileInput: document.getElementById("fileInput"),
     fileName: document.getElementById("fileName"),
@@ -32,10 +31,13 @@
     discardBtn: document.getElementById("discardBtn"),
     recordInfo: document.getElementById("recordInfo"),
     helpBtn: document.getElementById("helpBtn"),
-    compatDialog: document.getElementById("compatDialog"),
-    compatList: document.getElementById("compatList"),
-    compatVersion: document.getElementById("compatVersion"),
-    closeCameraBtn: document.getElementById("closeCameraBtn")
+    helpDialog: document.getElementById("helpDialog"),
+    helpBody: document.getElementById("helpBody"),
+    helpVersion: document.getElementById("helpVersion"),
+    helpCloseBtn: document.getElementById("helpCloseBtn"),
+    discardDialog: document.getElementById("discardDialog"),
+    keepRecordingBtn: document.getElementById("keepRecordingBtn"),
+    confirmDiscardBtn: document.getElementById("confirmDiscardBtn")
   };
 
   const ctx = els.canvas.getContext("2d", { alpha: false });
@@ -230,6 +232,473 @@
     }
   };
 
+  const HELP_TEXT = {
+    "ja": {
+      "title": "使い方",
+      "close": "閉じる",
+      "stepsTitle": "写真から、音をつくる",
+      "steps": [
+        "写真を選ぶ",
+        "再生を押す",
+        "傾けて演奏"
+      ],
+      "intro": "写真上の色を音に変えるツールです。スマートフォンを傾けて、丸いカーソルを動かします。",
+      "controlsTitle": "ボタンと画面",
+      "controls": [
+        [
+          "play",
+          "再生・停止",
+          "▶ で演奏を開始し、■ で停止します。開始時の持ち方が操作の基準になります。"
+        ],
+        [
+          "recenter",
+          "姿勢をリセット",
+          "持ちやすい姿勢で押すと、その姿勢を基準にカーソルを中央へ戻します。"
+        ],
+        [
+          "photo",
+          "写真を変更",
+          "保存した写真を選びます。演奏中に変更すると演奏が止まり、録画中なら保存画面が開きます。"
+        ],
+        [
+          "bpm",
+          "テンポを調整",
+          "− / ＋で BPM を変更します。長押しで連続調整できます。範囲は 60〜160 です。"
+        ],
+        [
+          "record",
+          "動画を録画",
+          "演奏前に ○ を押して録画待機にし、▶ で録画も開始します。■ で終了し、名前を付けて保存します。"
+        ],
+        [
+          "tap",
+          "操作パネルを表示",
+          "写真部分をタップすると操作パネルが表示され、もう一度タップすると隠れます。しばらく操作しなくても隠れます。"
+        ],
+        [
+          "timer",
+          "録画時間と拍",
+          "録画中だけ表示されます。左の点は1拍目が赤、残り3拍が白。動画にこの表示は入りません。"
+        ],
+        [
+          "language",
+          "言語・ヘルプ",
+          "言語ボタンで日本語・中文・English を切り替えます。? はこのヘルプを開きます。"
+        ]
+      ],
+      "recordNote": "録画は演奏の途中から開始できません。失敗した録画は保存画面で削除できます。削除前に確認します。",
+      "colorTitle": "色と音の対応",
+      "colorIntro": "色は音の高さに対応します。色ごとに別の楽器へ切り替わるわけではありません。",
+      "colors": [
+        "赤",
+        "オレンジ",
+        "黄",
+        "緑",
+        "シアン",
+        "青",
+        "紫"
+      ],
+      "pitchNames": [
+        "ド",
+        "レ",
+        "ミ",
+        "ファ",
+        "ソ",
+        "ラ",
+        "シ"
+      ],
+      "toneRules": [
+        [
+          "色相 → 音階",
+          "代表的な色の対応は上のとおりです。色の境目では隣の音に変わることがあります。"
+        ],
+        [
+          "明るさ → 音域",
+          "暗い色は低い音域、明るい色は高い音域になりやすくなります。淡い色には補正があります。"
+        ],
+        [
+          "鮮やかさ → 音の強さ",
+          "鮮やかな色ほど強い音になりやすくなります。明るさによる補正も入ります。"
+        ],
+        [
+          "無彩色・淡い色 → Rest",
+          "黒・白・灰色に近い色やとても淡い色は、条件により休符になります。伴奏の拍は続きます。"
+        ]
+      ],
+      "sampleNote": "カーソル周辺の色をまとめて読み取り、8分音符のタイミングで音を切り替えます。スマートフォンの回転に合わせて操作方向も変わります。",
+      "tipsTitle": "うまく使うために",
+      "tips": [
+        "写真はスマートフォンのカメラで撮影・保存してから、写真ライブラリで選んでください。",
+        "音が出ない場合はメディア音量を確認し、再生を押してください。許可が求められた場合は許可してください。",
+        "振動の有無は端末・ブラウザにより異なります。画面をタッチしてもカーソルは移動しません。"
+      ],
+      "saveHint": "名前を変更して保存できます。拡張子は自動で付きます。",
+      "discardTitle": "録画を削除しますか？",
+      "discardBody": "この録画は保存されません。削除後は元に戻せません。",
+      "keep": "戻る",
+      "recordContinuing": "録画は続いています。",
+      "helpVersion": "バージョン",
+      "filename": "ファイル名",
+      "homeChoose": "写真を選択"
+    },
+    "zh": {
+      "title": "使用帮助",
+      "close": "关闭",
+      "stepsTitle": "把照片变成声音",
+      "steps": [
+        "选择照片",
+        "点击播放",
+        "倾斜演奏"
+      ],
+      "intro": "倾斜手机，移动照片上的圆形准星，将取样区域的颜色变成声音。",
+      "controlsTitle": "按键与画面",
+      "controls": [
+        [
+          "play",
+          "播放与停止",
+          "▶ 开始演奏，■ 停止。开始时的握持姿势会作为操作基准。"
+        ],
+        [
+          "recenter",
+          "校准 / 回正",
+          "以舒适的姿势握持手机后按下，重新设置姿势基准，并让准星回到中央。"
+        ],
+        [
+          "photo",
+          "替换照片",
+          "选择已保存的照片。演奏中换图会先停止演奏；正在录制时，也会打开保存窗口。"
+        ],
+        [
+          "bpm",
+          "调整节奏",
+          "用 − / ＋ 调整 BPM，长按可连续调整。范围为 60–160。"
+        ],
+        [
+          "record",
+          "录制视频",
+          "演奏前按 ○ 进入录制待机，再按 ▶ 同时开始演奏与录制。按 ■ 结束后命名保存。"
+        ],
+        [
+          "tap",
+          "显示操作栏",
+          "点击照片区域显示操作栏，再点一次隐藏。暂时不操作时也会自动隐藏。"
+        ],
+        [
+          "timer",
+          "录制时间与节拍",
+          "只在录制中显示。时间左侧圆点第一拍红、其余三拍白。这些提示不会出现在导出视频中。"
+        ],
+        [
+          "language",
+          "语言与帮助",
+          "语言按钮可切换日语、中文和英语。? 打开此帮助窗口。"
+        ]
+      ],
+      "recordNote": "不能在演奏中途开始录制。对录制不满意时，可在保存窗口删除，删除前会再次确认。",
+      "colorTitle": "颜色与声音",
+      "colorIntro": "颜色主要改变音高，不是为每种颜色分配一种不同的乐器音色。",
+      "colors": [
+        "红",
+        "橙",
+        "黄",
+        "绿",
+        "青",
+        "蓝",
+        "紫"
+      ],
+      "pitchNames": [
+        "Do",
+        "Re",
+        "Mi",
+        "Fa",
+        "Sol",
+        "La",
+        "Si"
+      ],
+      "toneRules": [
+        [
+          "色相 → 音阶",
+          "代表色与音阶如上。位于颜色边界时，可能切换为相邻音。"
+        ],
+        [
+          "明暗 → 音域",
+          "较暗颜色倾向低音域，较亮颜色倾向高音域；浅淡颜色另有修正。"
+        ],
+        [
+          "鲜艳程度 → 音的强弱",
+          "颜色越鲜艳，声音通常越强；明暗也会参与修正。"
+        ],
+        [
+          "中性色 / 浅淡色 → Rest",
+          "接近黑、白、灰或很浅淡的颜色，符合条件时作为休符。伴奏节拍仍会继续。"
+        ]
+      ],
+      "sampleNote": "程序读取准星周边区域的颜色，在八分音符拍点切换声音。手机横竖屏变化时，操作方向会随之调整。",
+      "tipsTitle": "使用提示",
+      "tips": [
+        "需要新照片时，请先用手机相机拍摄并保存，再从照片图库导入。",
+        "没有声音时，请检查媒体音量并点击播放；出现权限请求时请允许。",
+        "振动支持因手机和浏览器而异。触摸画面不会移动准星。"
+      ],
+      "saveHint": "修改名称后保存，文件扩展名会自动添加。",
+      "discardTitle": "删除这段录制？",
+      "discardBody": "这段录制尚未保存，删除后无法恢复。",
+      "keep": "返回",
+      "recordContinuing": "录制仍在继续。",
+      "helpVersion": "版本",
+      "filename": "文件名",
+      "homeChoose": "选择照片"
+    },
+    "en": {
+      "title": "How to play",
+      "close": "Close",
+      "stepsTitle": "Turn a photo into sound",
+      "steps": [
+        "Choose a photo",
+        "Press Play",
+        "Tilt to perform"
+      ],
+      "intro": "Tilt your phone to move the circular cursor across a photo. Colors around the cursor become sound.",
+      "controlsTitle": "Controls & display",
+      "controls": [
+        [
+          "play",
+          "Play & stop",
+          "▶ starts the performance; ■ stops it. Your posture at the start becomes the control reference."
+        ],
+        [
+          "recenter",
+          "Recenter",
+          "Hold your phone comfortably, then press this button to reset the posture reference and return the cursor to the center."
+        ],
+        [
+          "photo",
+          "Change photo",
+          "Choose a saved photo. Changing it stops the performance. If you are recording, the save dialog also opens."
+        ],
+        [
+          "bpm",
+          "Adjust tempo",
+          "Use − / ＋ to change BPM. Hold either button to adjust continuously. The range is 60–160."
+        ],
+        [
+          "record",
+          "Record a video",
+          "Before playing, press ○ to arm recording. Press ▶ to start playing and recording together. Press ■ to finish and save."
+        ],
+        [
+          "tap",
+          "Show controls",
+          "Tap the photo to show the controls; tap again to hide them. They also hide after a short period of inactivity."
+        ],
+        [
+          "timer",
+          "Recording time & beat",
+          "Shown only while recording. The dot is red on beat 1 and white on beats 2–4. This display is not included in the video."
+        ],
+        [
+          "language",
+          "Language & help",
+          "The language button switches between Japanese, Chinese and English. ? opens this help window."
+        ]
+      ],
+      "recordNote": "Recording cannot start halfway through a performance. You can discard a take in the save dialog, with confirmation before deletion.",
+      "colorTitle": "Color & sound",
+      "colorIntro": "Colors change pitch. They do not switch between different instrument sounds.",
+      "colors": [
+        "Red",
+        "Orange",
+        "Yellow",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Purple"
+      ],
+      "pitchNames": [
+        "Do",
+        "Re",
+        "Mi",
+        "Fa",
+        "Sol",
+        "La",
+        "Ti"
+      ],
+      "toneRules": [
+        [
+          "Hue → note",
+          "The colors above are representative. Colors near a boundary may produce a neighboring note."
+        ],
+        [
+          "Brightness → register",
+          "Darker colors tend toward a lower register and brighter colors toward a higher one. Pale colors receive an adjustment."
+        ],
+        [
+          "Saturation → strength",
+          "More vivid colors generally produce stronger sound. Brightness also affects the result."
+        ],
+        [
+          "Neutral / pale colors → Rest",
+          "Near-black, white, gray and very pale colors may become rests under the matching rules. The backing beat continues."
+        ]
+      ],
+      "sampleNote": "The app samples a region around the cursor and changes notes on eighth-note ticks. The control axes update when the screen rotates.",
+      "tipsTitle": "A few useful tips",
+      "tips": [
+        "Take and save new photos with your phone’s camera first, then choose them from the photo library.",
+        "If there is no sound, check media volume and press Play. Please grant permissions when requested.",
+        "Vibration support varies by phone and browser. Touching the photo does not move the cursor."
+      ],
+      "saveHint": "Edit the name, then save. The file extension is added automatically.",
+      "discardTitle": "Delete this recording?",
+      "discardBody": "This take has not been saved. Deleting it cannot be undone.",
+      "keep": "Go back",
+      "recordContinuing": "Recording is still running.",
+      "helpVersion": "Version",
+      "filename": "File name",
+      "homeChoose": "Choose Photo"
+    }
+  };
+
+  const RECENTER_SVG = "<svg class=\"ui-glyph\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"12\" cy=\"12\" r=\"6.5\"/><path d=\"M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"/></svg>";
+  const dialogUi = {
+    helpLanguage: null, layoutFrame: 0, editAnchor: null, restoreGeneration: 0
+  };
+
+  function helpPack() {
+    return HELP_TEXT[state.currentLang] || HELP_TEXT.ja;
+  }
+
+  function escapeUiText(value) {
+    return String(value).replace(/[&<>"']/g, char =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+  }
+
+  function helpSymbol(name) {
+    if (name === "recenter") return RECENTER_SVG;
+    if (name === "tap") return "<svg class=\"ui-glyph\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12V5.5a1.5 1.5 0 0 1 3 0V10l5 1.5a3 3 0 0 1 2 2.8V16c0 3-2.5 5-5.5 5H12a4 4 0 0 1-3.2-1.6L5 14.5a1.5 1.5 0 0 1 2.1-2.1L9 14\"/><path d=\"M5 6H3m5-4L7 1m8 4 2-1\"/></svg>";
+    const symbols = { play: "▶ / ■", photo: "▧", bpm: "− / ＋",
+      record: "○", timer: "00:12", language: "A / 文" };
+    return symbols[name] || "?";
+  }
+
+  function showHelpDialog() {
+    updateHelpDialog();
+    els.helpBody.scrollTop = 0;
+    stopBpmRepeat();
+    clearTimeout(state.transportHideTimer);
+    showUiDialog(els.helpDialog);
+    els.helpCloseBtn.focus({ preventScroll: true });
+  }
+
+  function showUiDialog(dialog) {
+    syncDialogViewport();
+    if (!dialog.open) dialog.showModal();
+    scheduleDialogViewport();
+  }
+
+  function syncDialogViewport() {
+    dialogUi.layoutFrame = 0;
+    const viewport = window.visualViewport;
+    const width = Math.max(1, viewport ? viewport.width : window.innerWidth);
+    const height = Math.max(1, viewport ? viewport.height : window.innerHeight);
+    const left = viewport ? viewport.offsetLeft : 0;
+    const top = viewport ? viewport.offsetTop : 0;
+    for (const dialog of [els.helpDialog, els.saveDialog, els.discardDialog]) {
+      if (!dialog) continue;
+      dialog.dataset.compact = height < 360 ? "true" : "false";
+      dialog.dataset.tight = height < 180 ? "true" : "false";
+      dialog.style.setProperty("--dialog-vwidth", `${width}px`);
+      dialog.style.setProperty("--dialog-vheight", `${height}px`);
+      dialog.style.setProperty("--dialog-vleft", `${left}px`);
+      dialog.style.setProperty("--dialog-vtop", `${top}px`);
+    }
+    // Scroll only the dialog's content, not the underlying performance page.
+    const active = document.activeElement;
+    if (active === els.saveNameInput && els.saveDialog.open && !els.discardDialog.open) {
+      const scroller = document.getElementById("saveBody");
+      const bounds = scroller.getBoundingClientRect();
+      const field = active.getBoundingClientRect();
+      if (field.bottom > bounds.bottom) scroller.scrollTop += field.bottom - bounds.bottom + 6;
+      else if (field.top < bounds.top) scroller.scrollTop += field.top - bounds.top - 6;
+    }
+  }
+
+  function scheduleDialogViewport() {
+    if (dialogUi.layoutFrame) return;
+    dialogUi.layoutFrame = requestAnimationFrame(syncDialogViewport);
+  }
+
+  function restoreAfterFilenameEditing() {
+    const generation = ++dialogUi.restoreGeneration;
+    // Safari can report the final viewport at the end of its keyboard animation.
+    // Use bounded follow-up measurements; never reset user zoom or enter fullscreen.
+    for (const delay of [0, 150, 350, 650]) {
+      setTimeout(() => {
+        if (generation !== dialogUi.restoreGeneration ||
+            document.activeElement === els.saveNameInput) return;
+        const anchor = dialogUi.editAnchor;
+        const scale = window.visualViewport ? window.visualViewport.scale : 1;
+        if (anchor && Math.abs(scale - anchor.scale) < 0.02 &&
+            (window.scrollX !== anchor.x || window.scrollY !== anchor.y)) {
+          window.scrollTo(anchor.x, anchor.y);
+        }
+        scheduleDialogViewport();
+        schedulePerformanceStatusLayout();
+      }, delay);
+    }
+  }
+
+  function wireDialogUi() {
+    const viewport = window.visualViewport;
+    if (viewport) {
+      viewport.addEventListener("resize", scheduleDialogViewport);
+      viewport.addEventListener("scroll", scheduleDialogViewport);
+    }
+    window.addEventListener("resize", scheduleDialogViewport);
+    window.addEventListener("orientationchange", scheduleDialogViewport);
+    window.addEventListener("pageshow", scheduleDialogViewport);
+
+    els.saveNameInput.addEventListener("focus", () => {
+      ++dialogUi.restoreGeneration;
+      dialogUi.editAnchor = { x: window.scrollX, y: window.scrollY,
+        scale: window.visualViewport ? window.visualViewport.scale : 1 };
+      scheduleDialogViewport();
+    });
+    els.saveNameInput.addEventListener("blur", restoreAfterFilenameEditing);
+    els.saveNameInput.addEventListener("input", scheduleDialogViewport);
+    els.helpCloseBtn.addEventListener("click", () => els.helpDialog.close());
+    els.helpDialog.addEventListener("close", () => {
+      if (state.playing) showControlsTemporarily(1800);
+      scheduleDialogViewport();
+    });
+
+    els.keepRecordingBtn.addEventListener("click", () => {
+      els.discardDialog.close();
+      // Preserve the name and selection; do not reopen the keyboard on cancel.
+      els.discardBtn.focus({ preventScroll: true });
+    });
+    els.confirmDiscardBtn.addEventListener("click", () => {
+      state.recordedBlob = null;
+      state.recordedChunks = [];
+      els.discardDialog.close();
+      els.saveDialog.close();
+    });
+    els.saveDialog.addEventListener("cancel", event => {
+      // Escape/backdrop must never silently lose a take.
+      event.preventDefault();
+      els.saveNameInput.blur();
+    });
+    els.saveDialog.addEventListener("close", () => {
+      els.saveNameInput.blur();
+      restoreAfterFilenameEditing();
+    });
+    els.saveDialog.querySelector("form").addEventListener("submit", event => {
+      event.preventDefault();  // Enter is "done editing", not an accidental save.
+      els.saveNameInput.blur();
+    });
+    syncDialogViewport();
+  }
+
   function t(key) {
     const pack = I18N[state.currentLang] || I18N.ja;
     return pack[key] || I18N.ja[key] || key;
@@ -247,6 +716,7 @@
 
   function applyLanguage(lang) {
     state.currentLang = I18N[lang] ? lang : "ja";
+    const help = helpPack();
     if (els.langSelect) els.langSelect.value = state.currentLang;
     document.documentElement.lang = t("htmlLang");
 
@@ -255,30 +725,33 @@
     setHtml("#homeHint", t("hintHtml"));
     els.choosePhotoBtn.textContent = t("choosePhoto");
     els.photoBtn.title = t("photoTitle");
+    els.photoBtn.setAttribute("aria-label", t("photoTitle"));
     els.recordBtn.title = t("recordTitle");
+    els.recordBtn.setAttribute("aria-label", t("recordTitle"));
     if (els.recordTimer) els.recordTimer.title = t("recordTimerLabel");
     updatePerformanceStatusLabels();
-    els.sensorBtn.title = t("sensorTitle");
+    els.sensorBtn.title = help.controls[1][1];
+    els.sensorBtn.setAttribute("aria-label", help.controls[1][1]);
     els.sensorStatus.textContent = t("sensorLabel");
     els.playBtn.setAttribute("aria-label", state.playing ? t("stop") : t("play"));
-    els.helpBtn.setAttribute("aria-label", t("compatTitle"));
+    els.helpBtn.setAttribute("aria-label", help.title);
+    els.helpBtn.title = help.title;
 
-    setText("#saveDialog h2", t("saveTitle"));
-    if (els.saveDialog?.open && state.recordedBlob) updateRecordInfo();
+    setText("#saveTitle", t("saveTitle"));
+    if (els.saveDialog.open && state.recordedBlob) updateRecordInfo();
     else els.recordInfo.textContent = t("recordDone");
-    const inputLabel = document.querySelector("#saveDialog .input-label");
-    if (inputLabel && inputLabel.firstChild) inputLabel.firstChild.textContent = t("fileName") + "\n          ";
+    setText("#saveNameLabel", help.filename);
+    setText("#saveHint", help.saveHint);
     els.discardBtn.textContent = t("discard");
     els.saveBtn.textContent = t("save");
-
-    setText("#compatDialog h2", t("compatTitle"));
-    setText("#compatDialog .hint", t("compatHint"));
-    const compatClose = document.querySelector("#compatDialog .primary-btn");
-    if (compatClose) compatClose.textContent = t("close");
-    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
+    setText("#discardTitle", help.discardTitle);
+    setText("#discardBody", help.discardBody);
+    els.keepRecordingBtn.textContent = help.keep;
+    els.confirmDiscardBtn.textContent = t("discard");
 
     updateBpm(0);
-    updateCompatDialog();
+    updateHelpDialog();
+    scheduleDialogViewport();
   }
 
 
@@ -1929,10 +2402,14 @@
   function showSaveDialog() {
     setFilenameText(state.imageBaseName || "Iroto");
     updateRecordInfo();
-    els.saveDialog.showModal();
+    showUiDialog(els.saveDialog);
+    // Keep the existing full-name selection. Do not resize the stage or change
+    // the viewport meta tag when the keyboard opens.
     setTimeout(() => {
+      if (!els.saveDialog.open || els.discardDialog.open) return;
       els.saveNameInput.focus({ preventScroll: true });
       selectFilenameText();
+      scheduleDialogViewport();
     }, 80);
   }
 
@@ -1949,6 +2426,7 @@
 
   function saveRecording() {
     if (!state.recordedBlob) return;
+    els.saveNameInput.blur();
     const name = sanitizeName(getFilenameText() || state.imageBaseName || "Iroto");
     const a = document.createElement("a");
     const url = URL.createObjectURL(state.recordedBlob);
@@ -1962,10 +2440,10 @@
   }
 
   function discardRecording() {
-    if (!confirm(t("discardConfirm"))) return;
-    state.recordedBlob = null;
-    state.recordedChunks = [];
-    els.saveDialog.close();
+    if (!state.recordedBlob) return;
+    els.saveNameInput.blur();
+    showUiDialog(els.discardDialog);
+    els.keepRecordingBtn.focus({ preventScroll: true });
   }
 
   function updateRecordButton() {
@@ -2001,7 +2479,7 @@
 
     if (!hasOrientation && !hasMotion) {
       state.sensorMode = "touch";
-      updateCompatDialog();
+      updateHelpDialog();
       return false;
     }
 
@@ -2040,7 +2518,7 @@
         }
       }, 1800);
 
-      updateCompatDialog();
+      updateHelpDialog();
       return true;
     } catch (err) {
       console.warn(err);
@@ -2357,29 +2835,52 @@
     els.bpmLabel.textContent = `BPM ${state.bpm}`;
   }
 
-  function updateCompatDialog() {
-    const checks = [
-      [t("compatSecure"), isSecureEnoughForSensors(), t("compatSecureNote")],
-      ["Web Audio", !!(window.AudioContext || window.webkitAudioContext), t("compatAudioNote")],
-      ["DeviceOrientation", "DeviceOrientationEvent" in window, t("compatOrientationNote")],
-      ["DeviceMotion", "DeviceMotionEvent" in window, t("compatMotionNote")],
-      [t("compatIOS"), !(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") ? null : true, t("compatIOSNote")],
-      ["Canvas captureStream", !!els.canvas.captureStream, t("compatCaptureNote")],
-      ["MediaRecorder", !!window.MediaRecorder, t("compatRecorderNote")],
-      [t("compatMp4"), !!(window.MediaRecorder && MediaRecorder.isTypeSupported && (MediaRecorder.isTypeSupported("video/mp4") || MediaRecorder.isTypeSupported("video/mp4;codecs=avc1.42E01E,mp4a.40.2"))), t("compatMp4Note")],
-      ["PWA / Service Worker", "serviceWorker" in navigator, t("compatPwaNote")]
-    ];
-
-    if (els.compatVersion) els.compatVersion.textContent = `v${IROTO_WEB_VERSION}`;
-    els.compatList.innerHTML = "";
-    for (const [name, ok, note] of checks) {
-      const row = document.createElement("div");
-      row.className = "compat-row";
-      const status = ok === true ? "OK" : ok === false ? t("compatStatusUnavailable") : t("compatStatusDepends");
-      const cls = ok === true ? "compat-ok" : ok === false ? "compat-bad" : "compat-warn";
-      row.innerHTML = `<div><b>${name}</b><br><small>${note}</small></div><strong class="${cls}">${status}</strong>`;
-      els.compatList.appendChild(row);
+  function updateHelpDialog() {
+    const pack = helpPack();
+    setText("#helpTitle", pack.title);
+    els.helpCloseBtn.setAttribute("aria-label", pack.close);
+    els.helpCloseBtn.title = pack.close;
+    els.helpVersion.textContent = `v${IROTO_WEB_VERSION}`;
+    if (dialogUi.helpLanguage !== state.currentLang) {
+      dialogUi.helpLanguage = state.currentLang;
+      const pitches = ["C", "D", "E", "F", "G", "A", "B"];
+      const hues = [0, 25, 50, 110, 175, 220, 285];
+      const controlCards = pack.controls.map(([icon, title, text]) =>
+        `<li class="help-control">
+          <span class="help-symbol type-${icon}" aria-hidden="true">${helpSymbol(icon)}</span>
+          <div><h4>${escapeUiText(title)}</h4><p>${escapeUiText(text)}</p></div>
+        </li>`).join("");
+      const palette = pack.colors.map((name, i) =>
+        `<div class="help-swatch">
+          <span class="help-color-dot" style="--swatch:hsl(${hues[i]} 85% 57%)" aria-hidden="true"></span>
+          <b>${pitches[i]}</b><span>${escapeUiText(name)} · ${escapeUiText(pack.pitchNames[i])}</span>
+        </div>`).join("");
+      els.helpBody.innerHTML = `
+        <p class="help-live" id="helpLiveRecording" hidden>${escapeUiText(pack.recordContinuing)}</p>
+        <section class="help-section">
+          <h3>${escapeUiText(pack.stepsTitle)}</h3>
+          <ol class="help-steps">${pack.steps.map((text, i) => `<li><strong>0${i + 1}</strong>${escapeUiText(text)}</li>`).join("")}</ol>
+          <p>${escapeUiText(pack.intro)}</p>
+        </section>
+        <section class="help-section">
+          <h3>${escapeUiText(pack.controlsTitle)}</h3>
+          <ul class="help-control-list">${controlCards}</ul>
+          <p class="help-note">${escapeUiText(pack.recordNote)}</p>
+        </section>
+        <section class="help-section">
+          <h3>${escapeUiText(pack.colorTitle)}</h3>
+          <p>${escapeUiText(pack.colorIntro)}</p>
+          <div class="help-palette">${palette}</div>
+          <dl class="help-rules">${pack.toneRules.map(([title, text]) => `<div><dt>${escapeUiText(title)}</dt><dd>${escapeUiText(text)}</dd></div>`).join("")}</dl>
+          <p class="help-note">${escapeUiText(pack.sampleNote)}</p>
+        </section>
+        <section class="help-section">
+          <h3>${escapeUiText(pack.tipsTitle)}</h3>
+          <ul class="help-tips">${pack.tips.map(text => `<li>${escapeUiText(text)}</li>`).join("")}</ul>
+        </section>`;
     }
+    const live = document.getElementById("helpLiveRecording");
+    if (live) live.hidden = !state.recording;
   }
 
   function isTextEntryTarget(target) {
@@ -2404,6 +2905,7 @@
     }
 
     els.saveNameInput.addEventListener("keydown", e => {
+      if (e.isComposing) return;
       if (e.key === "Enter") {
         e.preventDefault();
         els.saveNameInput.blur();
@@ -2411,7 +2913,7 @@
     });
     els.saveNameInput.addEventListener("paste", e => {
       e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+      const text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/[\r\n]+/g, " ");
       document.execCommand("insertText", false, text);
     });
 
@@ -2460,10 +2962,7 @@
     els.saveBtn.addEventListener("click", saveRecording);
     els.discardBtn.addEventListener("click", discardRecording);
 
-    els.helpBtn.addEventListener("click", () => {
-      updateCompatDialog();
-      els.compatDialog.showModal();
-    });
+    els.helpBtn.addEventListener("click", showHelpDialog);
 
     els.canvas.addEventListener("pointerdown", e => {
       e.preventDefault();
@@ -2525,6 +3024,7 @@
   }
 
   wireEvents();
+  wireDialogUi();
   watchScreenOrientationChanges();
   watchPerformanceStatusLayout();
   applyLanguage("ja");
