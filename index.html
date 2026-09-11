@@ -8,13 +8,13 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Iroto Web</title>
-  <link rel="icon" type="image/svg+xml" href="iroto-logo.svg?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4" />
+  <link rel="icon" type="image/svg+xml" href="iroto-logo.svg?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5" />
 
 
-  <link rel="manifest" href="manifest.webmanifest?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4" />
-  <link rel="stylesheet" href="styles.css?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4" />
+  <link rel="manifest" href="manifest.webmanifest?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5" />
+  <link rel="stylesheet" href="styles.css?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5" />
 </head>
 <body>
   <div id="app">
@@ -60,14 +60,13 @@
     <div id="sensorStatus" class="sensor-status hidden" aria-hidden="true">センサー</div>
     <button id="sensorBtn" class="recenter-btn hidden" type="button" title="センサーを有効化 / 再センター">⌖</button>
     <button id="playBtn" class="play-btn hidden" type="button" aria-label="再生">▶</button>
-    <!-- One shared, non-interactive status layer. Not part of the video canvas. -->
+    <!-- One recording-only timer with an inline beat dot. Not part of the video canvas. -->
     <div id="performanceStatus" data-controls-visible="true" hidden>
       <div id="recordTimer" class="performance-timer" role="timer" aria-live="off" hidden>
-        <span class="record-label" aria-hidden="true">REC</span>
+        <span id="beatIndicator" class="beat-indicator" role="img" aria-label="拍の表示">
+          <span id="beatDot" aria-hidden="true"></span>
+        </span>
         <span id="recordElapsed">00:00</span>
-      </div>
-      <div id="beatIndicator" class="beat-indicator" role="img" aria-label="拍の表示">
-        <span id="beatDot" aria-hidden="true"></span>
       </div>
     </div>
 
@@ -92,7 +91,7 @@
       <form method="dialog" class="dialog-card compat-card">
         <h2>互換性チェック</h2>
         <div id="compatList" class="compat-list"></div>
-        <p id="compatVersion" class="version-label">v2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4</p>
+        <p id="compatVersion" class="version-label">v2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5</p>
         <p class="hint">
           センサー機能は通常 HTTPS が必要です。録画形式はブラウザに応じて MP4 または WebM が自動選択されます。
         </p>
@@ -103,6 +102,6 @@
     </dialog>
   </div>
 
-  <script src="app.js?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4"></script>
+  <script src="app.js?v=2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs4";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs5";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -1391,7 +1391,8 @@
   }
 
   function markVisualBeat(pos, audioTime) {
-    if (!state.playing || pos % 2 !== 0 || !Number.isFinite(audioTime)) return;
+    // nofs5: visual beats belong to the recording timer, not normal playback.
+    if (!state.playing || !state.recording || pos % 2 !== 0 || !Number.isFinite(audioTime)) return;
     const beat = (pos % 8) / 2;
     performanceStatusState.beatIndex = beat;
     performanceStatusState.beatTime = audioTime;
@@ -1401,7 +1402,7 @@
   }
 
   function updateVisualMetronome() {
-    if (!state.playing || !audio.ctx || !els.beatDot || els.performanceStatus.hidden) return;
+    if (!state.playing || !state.recording || !audio.ctx || !els.beatDot || els.performanceStatus.hidden) return;
     const time = performanceStatusState.beatTime;
     const beat = performanceStatusState.beatIndex;
     const beatMs = 60000 / Math.max(1, state.bpm);
@@ -1420,22 +1421,35 @@
     const layer = els.performanceStatus;
     if (!layer || !els.topbar || !els.langSelect || !els.helpBtn) return;
     const lang = els.langSelect.getBoundingClientRect();
-    const help = els.helpBtn.getBoundingClientRect();
-    if (lang.width <= 0 || lang.height <= 0 || help.width <= 0) return;
+    const bar = els.topbar.getBoundingClientRect();
+    if (lang.width <= 0 || lang.height <= 0 || bar.width <= 0) return;
     // offsetTop/offsetHeight ignore the topbar's existing hide animation.
-    // DOM rects for X include the existing landscape safe-area margins.
-    const height = lang.height;
+    // Centre the single timer in the same visible region as the topbar/title.
+    // This includes the existing landscape safe-area margins exactly once.
+    let height = lang.height;
+    let gap = 12;
+    const barBottom = els.topbar.offsetTop + els.topbar.offsetHeight;
+    // The centred timer must not overlap the central stop button in short
+    // landscape viewports. Compact only this badge; leave controls unchanged.
+    if (window.innerWidth > window.innerHeight && els.playBtn) {
+      const playCenter = parseFloat(getComputedStyle(els.playBtn).top);
+      const playTop = playCenter - els.playBtn.offsetHeight / 2;
+      const available = playTop - barBottom - 6;
+      if (Number.isFinite(available) && available >= 28 && available < height + gap) {
+        gap = Math.min(12, Math.max(4, available - 24));
+        height = Math.max(24, Math.min(height, available - gap));
+      }
+    }
     const restTop = Math.max(0, els.topbar.offsetTop + els.helpBtn.offsetTop + els.helpBtn.offsetHeight / 2 - height / 2);
-    const expandedTop = Math.max(restTop, els.topbar.offsetTop + els.topbar.offsetHeight + 12);
+    const expandedTop = Math.max(restTop, barBottom + gap);
     const radius = getComputedStyle(els.langSelect).borderTopLeftRadius;
     const values = {
       "--status-rest-top": `${restTop}px`,
       "--status-expanded-offset": `${expandedTop - restTop}px`,
-      "--status-left": `${lang.left}px`,
+      "--status-left": `${bar.left + (bar.width - lang.width) / 2}px`,
       "--status-pill-width": `${lang.width}px`,
       "--status-pill-height": `${height}px`,
-      "--status-pill-radius": radius,
-      "--status-beat-center-x": `${help.left + help.width / 2}px`
+      "--status-pill-radius": radius
     };
     for (const [name, value] of Object.entries(values)) {
       if (layer.style.getPropertyValue(name) !== value) layer.style.setProperty(name, value);
@@ -1462,11 +1476,11 @@
 
   function syncPerformanceStatus() {
     if (!els.performanceStatus) return;
-    const show = !!(state.playing && state.image);
+    const show = !!(state.playing && state.image && state.recording);
     if (show && els.performanceStatus.hidden) measurePerformanceStatusLayout();
     els.performanceStatus.dataset.controlsVisible = state.controlsVisible ? "true" : "false";
     els.performanceStatus.hidden = !show;
-    els.recordTimer.hidden = !(show && state.recording);
+    els.recordTimer.hidden = !show;
     if (!show) resetVisualMetronome();
   }
 
