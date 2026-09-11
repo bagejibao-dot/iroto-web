@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs11";
+  const IROTO_WEB_VERSION = "2.14.1-beat-haptic-stronger-logo-v3-browser-nofs12";
 
   const els = {
     canvas: document.getElementById("stage"),
@@ -236,59 +236,52 @@
     "ja": {
       "title": "使い方",
       "close": "閉じる",
-      "stepsTitle": "写真から、音をつくる",
+      "stepsTitle": "写真で演奏",
       "steps": [
         "写真を選ぶ",
         "再生を押す",
         "傾けて演奏"
       ],
-      "intro": "写真上の色を音に変えるツールです。スマートフォンを傾けて、丸いカーソルを動かします。",
-      "controlsTitle": "ボタンと画面",
+      "controlsTitle": "ボタンの使い方",
       "controls": [
         [
           "play",
           "再生・停止",
-          "▶ で演奏を開始し、■ で停止します。開始時の持ち方が操作の基準になります。"
+          "▶ で始め、■ で止めます。"
         ],
         [
           "recenter",
           "姿勢をリセット",
-          "持ちやすい姿勢で押すと、その姿勢を基準にカーソルを中央へ戻します。"
+          "持ちやすい姿勢で押すと、カーソルが中央に戻ります。"
         ],
         [
           "photo",
           "写真を変更",
-          "保存した写真を選びます。演奏中に変更すると演奏が止まり、録画中なら保存画面が開きます。"
+          "写真を選び直すと演奏は止まります。"
         ],
         [
           "bpm",
           "テンポを調整",
-          "− / ＋で BPM を変更します。長押しで連続調整できます。範囲は 60〜160 です。"
+          "− / ＋で速さを調整。長押しもできます。"
         ],
         [
           "record",
           "動画を録画",
-          "演奏前に ○ を押して録画待機にし、▶ で録画も開始します。■ で終了し、名前を付けて保存します。"
+          "演奏前に ○、次に ▶ を押すと録画開始。■ で終了し、名前を付けて保存します。"
         ],
         [
           "tap",
           "操作パネルを表示",
-          "写真部分をタップすると操作パネルが表示され、もう一度タップすると隠れます。しばらく操作しなくても隠れます。"
+          "写真をタップするとボタンを表示。もう一度で隠れます。"
         ],
         [
           "timer",
           "録画時間と拍",
-          "録画中だけ表示されます。左の点は1拍目が赤、残り3拍が白。動画にこの表示は入りません。"
-        ],
-        [
-          "language",
-          "言語・ヘルプ",
-          "言語ボタンで日本語・中文・English を切り替えます。? はこのヘルプを開きます。"
+          "録画中に時間を表示。点が赤・白・白・白の順に光ります。"
         ]
       ],
-      "recordNote": "録画は演奏の途中から開始できません。失敗した録画は保存画面で削除できます。削除前に確認します。",
       "colorTitle": "色と音の対応",
-      "colorIntro": "色は音の高さに対応します。色ごとに別の楽器へ切り替わるわけではありません。",
+      "colorIntro": "色が変わると、音の高さも変わります。",
       "colors": [
         "赤",
         "オレンジ",
@@ -309,28 +302,17 @@
       ],
       "toneRules": [
         [
-          "色相 → 音階",
-          "代表的な色の対応は上のとおりです。色の境目では隣の音に変わることがあります。"
+          "明るさ",
+          "暗い色は低い音、明るい色は高い音になりやすくなります。"
         ],
         [
-          "明るさ → 音域",
-          "暗い色は低い音域、明るい色は高い音域になりやすくなります。淡い色には補正があります。"
+          "鮮やかさ",
+          "鮮やかな色ほど、音が強くなりやすくなります。"
         ],
         [
-          "鮮やかさ → 音の強さ",
-          "鮮やかな色ほど強い音になりやすくなります。明るさによる補正も入ります。"
-        ],
-        [
-          "無彩色・淡い色 → Rest",
-          "黒・白・灰色に近い色やとても淡い色は、条件により休符になります。伴奏の拍は続きます。"
+          "音が休む色",
+          "黒・白・灰色や淡い色では、音が休むことがあります。"
         ]
-      ],
-      "sampleNote": "カーソル周辺の色をまとめて読み取り、8分音符のタイミングで音を切り替えます。スマートフォンの回転に合わせて操作方向も変わります。",
-      "tipsTitle": "うまく使うために",
-      "tips": [
-        "写真はスマートフォンのカメラで撮影・保存してから、写真ライブラリで選んでください。",
-        "音が出ない場合はメディア音量を確認し、再生を押してください。許可が求められた場合は許可してください。",
-        "振動の有無は端末・ブラウザにより異なります。画面をタッチしてもカーソルは移動しません。"
       ],
       "saveHint": "名前を変更して保存できます。拡張子は自動で付きます。",
       "discardTitle": "録画を削除しますか？",
@@ -344,59 +326,52 @@
     "zh": {
       "title": "使用帮助",
       "close": "关闭",
-      "stepsTitle": "把照片变成声音",
+      "stepsTitle": "用照片演奏",
       "steps": [
         "选择照片",
         "点击播放",
         "倾斜演奏"
       ],
-      "intro": "倾斜手机，移动照片上的圆形准星，将取样区域的颜色变成声音。",
-      "controlsTitle": "按键与画面",
+      "controlsTitle": "按键怎么用",
       "controls": [
         [
           "play",
           "播放与停止",
-          "▶ 开始演奏，■ 停止。开始时的握持姿势会作为操作基准。"
+          "按 ▶ 开始，按 ■ 停止。"
         ],
         [
           "recenter",
           "校准 / 回正",
-          "以舒适的姿势握持手机后按下，重新设置姿势基准，并让准星回到中央。"
+          "以舒适的姿势握住手机，按下后准星回到中央。"
         ],
         [
           "photo",
           "替换照片",
-          "选择已保存的照片。演奏中换图会先停止演奏；正在录制时，也会打开保存窗口。"
+          "选择另一张照片，当前演奏会先停止。"
         ],
         [
           "bpm",
           "调整节奏",
-          "用 − / ＋ 调整 BPM，长按可连续调整。范围为 60–160。"
+          "用 − / ＋ 调整快慢，长按可连续调整。"
         ],
         [
           "record",
           "录制视频",
-          "演奏前按 ○ 进入录制待机，再按 ▶ 同时开始演奏与录制。按 ■ 结束后命名保存。"
+          "演奏前先按 ○，再按 ▶ 开始录制。按 ■ 结束后，命名并保存。"
         ],
         [
           "tap",
           "显示操作栏",
-          "点击照片区域显示操作栏，再点一次隐藏。暂时不操作时也会自动隐藏。"
+          "点一下照片显示按键，再点一下隐藏。"
         ],
         [
           "timer",
           "录制时间与节拍",
-          "只在录制中显示。时间左侧圆点第一拍红、其余三拍白。这些提示不会出现在导出视频中。"
-        ],
-        [
-          "language",
-          "语言与帮助",
-          "语言按钮可切换日语、中文和英语。? 打开此帮助窗口。"
+          "录制时显示时间，圆点按红、白、白、白闪烁。"
         ]
       ],
-      "recordNote": "不能在演奏中途开始录制。对录制不满意时，可在保存窗口删除，删除前会再次确认。",
       "colorTitle": "颜色与声音",
-      "colorIntro": "颜色主要改变音高，不是为每种颜色分配一种不同的乐器音色。",
+      "colorIntro": "不同颜色会发出不同高低的音。",
       "colors": [
         "红",
         "橙",
@@ -417,28 +392,17 @@
       ],
       "toneRules": [
         [
-          "色相 → 音阶",
-          "代表色与音阶如上。位于颜色边界时，可能切换为相邻音。"
+          "明暗",
+          "较暗的颜色通常音更低，较亮的颜色音更高。"
         ],
         [
-          "明暗 → 音域",
-          "较暗颜色倾向低音域，较亮颜色倾向高音域；浅淡颜色另有修正。"
+          "鲜艳程度",
+          "颜色越鲜艳，声音通常越强。"
         ],
         [
-          "鲜艳程度 → 音的强弱",
-          "颜色越鲜艳，声音通常越强；明暗也会参与修正。"
-        ],
-        [
-          "中性色 / 浅淡色 → Rest",
-          "接近黑、白、灰或很浅淡的颜色，符合条件时作为休符。伴奏节拍仍会继续。"
+          "暂停的颜色",
+          "黑、白、灰或很浅的颜色，可能让旋律暂时停下来。"
         ]
-      ],
-      "sampleNote": "程序读取准星周边区域的颜色，在八分音符拍点切换声音。手机横竖屏变化时，操作方向会随之调整。",
-      "tipsTitle": "使用提示",
-      "tips": [
-        "需要新照片时，请先用手机相机拍摄并保存，再从照片图库导入。",
-        "没有声音时，请检查媒体音量并点击播放；出现权限请求时请允许。",
-        "振动支持因手机和浏览器而异。触摸画面不会移动准星。"
       ],
       "saveHint": "修改名称后保存，文件扩展名会自动添加。",
       "discardTitle": "删除这段录制？",
@@ -452,59 +416,52 @@
     "en": {
       "title": "How to play",
       "close": "Close",
-      "stepsTitle": "Turn a photo into sound",
+      "stepsTitle": "Play with a photo",
       "steps": [
         "Choose a photo",
         "Press Play",
         "Tilt to perform"
       ],
-      "intro": "Tilt your phone to move the circular cursor across a photo. Colors around the cursor become sound.",
-      "controlsTitle": "Controls & display",
+      "controlsTitle": "Using the buttons",
       "controls": [
         [
           "play",
           "Play & stop",
-          "▶ starts the performance; ■ stops it. Your posture at the start becomes the control reference."
+          "Press ▶ to start and ■ to stop."
         ],
         [
           "recenter",
           "Recenter",
-          "Hold your phone comfortably, then press this button to reset the posture reference and return the cursor to the center."
+          "Hold your phone comfortably, then tap to bring the cursor back to the center."
         ],
         [
           "photo",
           "Change photo",
-          "Choose a saved photo. Changing it stops the performance. If you are recording, the save dialog also opens."
+          "Choose another photo. This stops the current performance."
         ],
         [
           "bpm",
           "Adjust tempo",
-          "Use − / ＋ to change BPM. Hold either button to adjust continuously. The range is 60–160."
+          "Use − / ＋ to change the speed. Hold to keep adjusting."
         ],
         [
           "record",
           "Record a video",
-          "Before playing, press ○ to arm recording. Press ▶ to start playing and recording together. Press ■ to finish and save."
+          "Before playing, tap ○, then ▶ to record. Tap ■ to finish, name and save your video."
         ],
         [
           "tap",
           "Show controls",
-          "Tap the photo to show the controls; tap again to hide them. They also hide after a short period of inactivity."
+          "Tap the photo to show the buttons. Tap again to hide them."
         ],
         [
           "timer",
           "Recording time & beat",
-          "Shown only while recording. The dot is red on beat 1 and white on beats 2–4. This display is not included in the video."
-        ],
-        [
-          "language",
-          "Language & help",
-          "The language button switches between Japanese, Chinese and English. ? opens this help window."
+          "While recording, the time is shown and the dot flashes red, white, white, white."
         ]
       ],
-      "recordNote": "Recording cannot start halfway through a performance. You can discard a take in the save dialog, with confirmation before deletion.",
       "colorTitle": "Color & sound",
-      "colorIntro": "Colors change pitch. They do not switch between different instrument sounds.",
+      "colorIntro": "Different colors play different notes.",
       "colors": [
         "Red",
         "Orange",
@@ -525,28 +482,17 @@
       ],
       "toneRules": [
         [
-          "Hue → note",
-          "The colors above are representative. Colors near a boundary may produce a neighboring note."
+          "Brightness",
+          "Darker colors tend to play lower notes; brighter colors, higher notes."
         ],
         [
-          "Brightness → register",
-          "Darker colors tend toward a lower register and brighter colors toward a higher one. Pale colors receive an adjustment."
+          "Vivid colors",
+          "More vivid colors tend to sound stronger."
         ],
         [
-          "Saturation → strength",
-          "More vivid colors generally produce stronger sound. Brightness also affects the result."
-        ],
-        [
-          "Neutral / pale colors → Rest",
-          "Near-black, white, gray and very pale colors may become rests under the matching rules. The backing beat continues."
+          "Pauses",
+          "Black, white, gray and pale colors may pause the melody."
         ]
-      ],
-      "sampleNote": "The app samples a region around the cursor and changes notes on eighth-note ticks. The control axes update when the screen rotates.",
-      "tipsTitle": "A few useful tips",
-      "tips": [
-        "Take and save new photos with your phone’s camera first, then choose them from the photo library.",
-        "If there is no sound, check media volume and press Play. Please grant permissions when requested.",
-        "Vibration support varies by phone and browser. Touching the photo does not move the cursor."
       ],
       "saveHint": "Edit the name, then save. The file extension is added automatically.",
       "discardTitle": "Delete this recording?",
@@ -574,10 +520,10 @@
   }
 
   function helpSymbol(name) {
+    if (name === "play") return "<svg class=\"help-play-glyph\" viewBox=\"0 0 32 20\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 3 14 10 3 17Z\" fill=\"currentColor\"/><rect x=\"21\" y=\"5\" width=\"10\" height=\"10\" rx=\"1\" fill=\"currentColor\"/></svg>";
     if (name === "recenter") return RECENTER_SVG;
     if (name === "tap") return "<svg class=\"ui-glyph\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 12V5.5a1.5 1.5 0 0 1 3 0V10l5 1.5a3 3 0 0 1 2 2.8V16c0 3-2.5 5-5.5 5H12a4 4 0 0 1-3.2-1.6L5 14.5a1.5 1.5 0 0 1 2.1-2.1L9 14\"/><path d=\"M5 6H3m5-4L7 1m8 4 2-1\"/></svg>";
-    const symbols = { play: "▶ / ■", photo: "▧", bpm: "− / ＋",
-      record: "○", timer: "00:12", language: "A / 文" };
+    const symbols = { photo: "▧", bpm: "− / ＋", record: "○", timer: "00:12" };
     return symbols[name] || "?";
   }
 
@@ -2860,23 +2806,16 @@
         <section class="help-section">
           <h3>${escapeUiText(pack.stepsTitle)}</h3>
           <ol class="help-steps">${pack.steps.map((text, i) => `<li><strong>0${i + 1}</strong>${escapeUiText(text)}</li>`).join("")}</ol>
-          <p>${escapeUiText(pack.intro)}</p>
         </section>
         <section class="help-section">
           <h3>${escapeUiText(pack.controlsTitle)}</h3>
           <ul class="help-control-list">${controlCards}</ul>
-          <p class="help-note">${escapeUiText(pack.recordNote)}</p>
         </section>
         <section class="help-section">
           <h3>${escapeUiText(pack.colorTitle)}</h3>
           <p>${escapeUiText(pack.colorIntro)}</p>
           <div class="help-palette">${palette}</div>
           <dl class="help-rules">${pack.toneRules.map(([title, text]) => `<div><dt>${escapeUiText(title)}</dt><dd>${escapeUiText(text)}</dd></div>`).join("")}</dl>
-          <p class="help-note">${escapeUiText(pack.sampleNote)}</p>
-        </section>
-        <section class="help-section">
-          <h3>${escapeUiText(pack.tipsTitle)}</h3>
-          <ul class="help-tips">${pack.tips.map(text => `<li>${escapeUiText(text)}</li>`).join("")}</ul>
         </section>`;
     }
     const live = document.getElementById("helpLiveRecording");

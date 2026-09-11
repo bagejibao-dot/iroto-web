@@ -186,8 +186,13 @@
   background: rgba(255,255,255,.04); font-family: system-ui,sans-serif;
   user-select: none; -webkit-user-select: none;
 }
-.help-symbol.type-bpm, .help-symbol.type-timer, .help-symbol.type-language { font-size: 12px; }
-.help-symbol.type-play { font-size: 14px; }
+.help-symbol.type-bpm, .help-symbol.type-timer { font-size: 12px; }
+/* nofs12: the play/stop pair fits within the unchanged help circle. */
+.help-symbol.type-play { font-size: 0; }
+.help-symbol.type-play > .help-play-glyph {
+  display: block; width: 28px; height: 18px;
+  fill: currentColor; stroke: none; pointer-events: none;
+}
 .help-control h4 { margin: 0 0 4px; font-size: 14px; line-height: 1.4; color: #fff; }
 .help-control p { margin: 0; font-size: 13px; line-height: 1.6; }
 .help-note { padding: 12px; border-left: 2px solid rgba(255,255,255,.38); background: var(--ui-soft); border-radius: 0 10px 10px 0; }
